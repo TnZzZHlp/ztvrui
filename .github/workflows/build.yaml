@@ -2,32 +2,15 @@
 name: Build
 
 on:
-  workflow_call:
-    inputs:
-      version:
-        type: string
-        required: false
-      features:
-        type: string
-        required: false
-        default: default
-        description: Space or comma separated list of features to activate
-      prerelease:
-        type: boolean
-        description: "Identify the release as a prerelease. Defaults to false"
-        required: false
+  push:
+    tags:
+      - "v*"
 
   workflow_dispatch:
-    inputs:
-      features:
-        type: string
-        required: false
-        default: default
-        description: Space or comma separated list of features to activate
 
 jobs:
   build:
-    name: build ${{ matrix.target }} ${{ inputs.version }}
+    name: build ${{ matrix.target }}
     strategy:
       fail-fast: false
       matrix:
@@ -78,13 +61,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ github.ref }}
 
       - name: Install Rust Toolchain Components
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           target: ${{ matrix.target }}
+
+      - name: Init Submodules
+        run: git submodule update --init --recursive
+
+      - name: Init Toolchain
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+        run: |
+          apt update
+          apt install -y musl-tools
 
       - name: Build Frontend
         run: |
@@ -95,29 +87,28 @@ jobs:
 
       - name: Build
         run: |
-          cd ../backend
+          cd backend
           cargo build --release --target ${{ matrix.target }}
 
-    #   - name: Prepare package
-    #     run: |
-    #       mkdir $DIST_DIR
-    #       cp LICENSE $DIST_DIR
-    #       cp README*.md $DIST_DIR
-    #       cp etc/smartdns/smartdns.conf $DIST_DIR
-    #       echo "Version: ${{ inputs.version }}" > $DIST_DIR/version
-    #       echo "Build date: $(date)" >> $DIST_DIR/version
-    #       echo "Commit: $(git rev-parse HEAD)" >> $DIST_DIR/version
-    #     shell: bash
+      - name: Prepare package
+        run: |
+          mkdir $DIST_DIR
+          cp LICENSE $DIST_DIR
+          cp example.config.json $DIST_DIR
+          echo "Version: ${{ github.ref }}" > $DIST_DIR/version
+          echo "Build date: $(date)" >> $DIST_DIR/version
+          echo "Commit: $(git rev-parse HEAD)" >> $DIST_DIR/version
+        shell: bash
 
-    #   - name: Publish archive
-    #     if: ${{ !contains(matrix.target, 'windows') && !contains(matrix.target, 'darwin') }}
-    #     env:
-    #       ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.tar.gz
-    #     run: |
-    #       cp target/${{ matrix.target }}/release/smartdns $DIST_DIR
-    #       tar -zcvf $ARCHIVE_FILE $DIST_DIR
-    #       shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
-    #       echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
+      - name: Publish archive
+        if: ${{ !contains(matrix.target, 'windows') && !contains(matrix.target, 'darwin') }}
+        env:
+          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{ github.ref }}.tar.gz
+        run: |
+          mv target/${{ matrix.target }}/release/backend $DIST_DIR/ztvrui
+          tar -zcvf $ARCHIVE_FILE $DIST_DIR
+          shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
+          echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
 
     #   - name: Publish zip archive macos
     #     if: ${{ contains(matrix.target, 'darwin') }}
