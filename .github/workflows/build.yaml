@@ -32,12 +32,12 @@ jobs:
           #     archive: tar.gz tar.xz tar.zst
           # - target: arch64-unknown-linux-musl
           #   archive: tar.gz tar.xz tar.zst
-          - target: x86_64-unknown-linux-musl
+          # - target: x86_64-unknown-linux-musl
+          #   os: ubuntu-latest
+          #   archive: tar.gz tar.xz tar.zst
+          - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             archive: tar.gz tar.xz tar.zst
-        #   - target: x86_64-unknown-linux-gnu
-        #     os: ubuntu-latest
-        #     archive: tar.gz tar.xz tar.zst
         #   - target: arm-unknown-linux-musleabi
         #     os: ubuntu-latest
         #     archive: tar.gz tar.xz tar.zst
@@ -72,12 +72,6 @@ jobs:
       - name: Init Submodules
         run: git submodule update --init --recursive
 
-      - name: Init Toolchain
-        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
-        run: |
-          apt update
-          apt install -y musl-tools
-
       - name: Build Frontend
         run: |
           cd frontend
@@ -95,58 +89,47 @@ jobs:
           mkdir $DIST_DIR
           cp LICENSE $DIST_DIR
           cp example.config.json $DIST_DIR
-          echo "Version: ${{ github.ref }}" > $DIST_DIR/version
+          echo "Version: ${{ github.ref_name }}" > $DIST_DIR/version
           echo "Build date: $(date)" >> $DIST_DIR/version
           echo "Commit: $(git rev-parse HEAD)" >> $DIST_DIR/version
         shell: bash
 
       - name: Publish archive
-        if: ${{ !contains(matrix.target, 'windows') && !contains(matrix.target, 'darwin') }}
+        if: ${{ !contains(matrix.target, 'windows') }}
         env:
-          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{ github.ref }}.tar.gz
+          ARCHIVE_FILE: ztvrui-${{ matrix.target }}-${{ github.ref_name }}.tar.gz
         run: |
-          mv target/${{ matrix.target }}/release/backend $DIST_DIR/ztvrui
+          cp backend/target/${{ matrix.target }}/release/backend $DIST_DIR/ztvrui
           tar -zcvf $ARCHIVE_FILE $DIST_DIR
           shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
           echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
 
-    #   - name: Publish zip archive macos
-    #     if: ${{ contains(matrix.target, 'darwin') }}
-    #     env:
-    #       ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
-    #     run: |
-    #       cp target/${{ matrix.target }}/release/smartdns $DIST_DIR
-    #       zip -9r $ARCHIVE_FILE $DIST_DIR
-    #       shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
-    #       echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
+      - name: Publish zip archive windows
+        if: ${{ contains(matrix.target, 'windows') }}
+        env:
+          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{ github.ref_name }}.zip
+        run: |
+          cp backend/target/${{ matrix.target }}/release/backend.exe $DIST_DIR/ztvrui.exe
+          7z a -tzip $ARCHIVE_FILE $DIST_DIR
+          echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
+          echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
+        shell: bash
 
-    #   - name: Publish zip archive windows
-    #     if: ${{ contains(matrix.target, 'windows') }}
-    #     env:
-    #       ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{inputs.version}}.zip
-    #     run: |
-    #       cp target/${{ matrix.target }}/release/smartdns.exe $DIST_DIR
-    #       7z a -tzip $ARCHIVE_FILE $DIST_DIR
-    #       echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
-    #       echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
-    #     shell: bash
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ztvrui-${{ matrix.target }}-${{ github.ref_name }}
+          retention-days: 30
+          path: ${{ env.archive_file }}
 
-    #   - name: Upload artifact
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #       name: smartdns-${{ matrix.target }}-${{ inputs.version || github.ref_name }}
-    #       retention-days: 30
-    #       path: ${{ env.archive_file }}
-
-    #   - name: Publish release
-    #     uses: softprops/action-gh-release@v2.0.6
-    #     if: ${{ startsWith(inputs.version, 'v') }}
-    #     with:
-    #       draft: false
-    #       prerelease: ${{ inputs.prerelease }}
-    #       tag_name: ${{ inputs.version }}
-    #       files: |
-    #         ${{ env.archive_file }}
-    #         ${{ env.archive_file }}-sha256sum.txt
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish release
+        uses: softprops/action-gh-release@v2.0.6
+        if: ${{ startsWith(github.ref_name, 'v') }}
+        with:
+          draft: false
+          tag_name: ${{ github.ref_name }}
+          files: |
+            ${{ env.archive_file }}
+            ${{ env.archive_file }}-sha256sum.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
