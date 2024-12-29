@@ -107,7 +107,7 @@ jobs:
       - name: Publish zip archive windows
         if: ${{ contains(matrix.target, 'windows') }}
         env:
-          ARCHIVE_FILE: smartdns-${{ matrix.target }}-${{ github.ref_name }}.zip
+          ARCHIVE_FILE: ztvrui-${{ matrix.target }}-${{ github.ref_name }}.zip
         run: |
           cp backend/target/${{ matrix.target }}/release/backend.exe $DIST_DIR/ztvrui.exe
           7z a -tzip $ARCHIVE_FILE $DIST_DIR
