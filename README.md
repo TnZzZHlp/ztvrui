@@ -4,6 +4,8 @@
 <h3 align="center">Zerotier One Controller WebUI</h3>
 <br/>
 
+**Now Support Language: zh-CN, en**
+
 ## Preview
 
 #### Network Info Page
