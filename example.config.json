@@ -1,8 +1,7 @@
 {
   "info": {
     "username": "admin",
-    "password": "$2b$08$L0G551nXjXw78mUANEC31uUXyx2SsEsmYkq7xPsa2umnQ/YSBeYV6",
-    "cookie": ""
+    "password": "$2b$08$L0G551nXjXw78mUANEC31uUXyx2SsEsmYkq7xPsa2umnQ/YSBeYV6"
   },
   "listen": "0.0.0.0:7000",
   "zerotier": {
