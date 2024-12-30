@@ -4,7 +4,7 @@
 <h3 align="center">Zerotier One Controller WebUI</h3>
 <br/>
 
-**Now Support Language: zh-CN, en**
+**Now Support Language：[简体中文](README_CN.md) (zh-CN), [English](README.md) (en)**
 
 ## Preview
 
