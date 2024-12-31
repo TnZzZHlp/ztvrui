@@ -10,7 +10,7 @@
 
 #### Network Info Page
 
-![Networks](docs/imgs/Snipaste_2024-12-30_09-57-07.png)
+![Networks](docs/imgs/Snipaste_2024-12-31_16-20-22.png)
 </br>
 
 <details>
