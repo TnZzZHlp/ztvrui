@@ -73,7 +73,9 @@
 
 #### First
 
-Download the example [configuration file](example.config.json) from the repository and modify it according to your needs.
+Install Zerotier One and start the service. You can find the installation instructions on the [official website](https://www.zerotier.com/download/).
+
+And then download the example [configuration file](example.config.json) from the repository and modify it according to your needs.
 
 The default username is `admin` and the default password is `password`. You can change the password by modifying the configuration file and using bcrypt to hash the new password. You can encrypt the password using [bcrypt.online](https://bcrypt.online/).
 
