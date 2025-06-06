@@ -1,70 +1,30 @@
 <p align="center">
-<h2 align="center">ZTVRUI</h2> 
+<h2 align="center">ZTVRUI</h2>
 </p>
 <h3 align="center">Zerotier One 控制器 WebUI</h3>
 <br/>
 
 **当前支持语言：[简体中文](README_CN.md) (zh-CN), [English](README.md) (en)**
 
-## 预览
+## Preview
 
-#### 网络信息页面
+#### Network Info Page
 
-![Networks](docs/imgs/Snipaste_2024-12-31_16-20-22.png)
+![Network Detail](docs/imgs/Network%20Detail.png)
 </br>
 
 <details>
-<summary>登录页面</summary>
+<summary>Login Page</summary>
 
-![Networks](docs/imgs/Snipaste_2024-12-30_09-56-15.png)
-
-</summary>
-</details>
-
-<details>
-<summary>网络页面</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-56-36.png)
+![Login](docs/imgs/Login.png)
 
 </summary>
 </details>
 
 <details>
-<summary>修改网络信息页面</summary>
+<summary>Networks Page</summary>
 
-![Networks](docs/imgs/Snipaste_2024-12-30_09-59-30.png)
-
-</summary>
-</details>
-
-<details>
-<summary>修改路由页面</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-57-31.png)
-
-</summary>
-</details>
-
-<details>
-<summary>修改IP分配池页面</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-57-42.png)
-
-</summary>
-</details>
-
-<details>
-<summary>修改DNS页面</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-59-57.png)
-
-</summary>
-</details>
-
-<details>
-<summary>修改成员页面</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_10-00-07.png)
+![Networks](docs/imgs/Networks.png)
 
 </summary>
 </details>

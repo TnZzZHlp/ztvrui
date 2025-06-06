@@ -1,5 +1,7 @@
 <p align="center">
-<h2 align="center">ZTVRUI</h2> 
+  <img src="docs/imgs/icon.png" alt="ZTVRUI Logo" width="200"/>
+</p>
+<h2 align="center">ZTVRUI</h2>
 </p>
 <h3 align="center">Zerotier One Controller WebUI</h3>
 <br/>
@@ -10,13 +12,13 @@
 
 #### Network Info Page
 
-![Networks](docs/imgs/Snipaste_2024-12-31_16-20-22.png)
+![Network Detail](docs/imgs/Network%20Detail.png)
 </br>
 
 <details>
 <summary>Login Page</summary>
 
-![Networks](docs/imgs/Snipaste_2024-12-30_09-56-15.png)
+![Login](docs/imgs/Login.png)
 
 </summary>
 </details>
@@ -24,47 +26,7 @@
 <details>
 <summary>Networks Page</summary>
 
-![Networks](docs/imgs/Snipaste_2024-12-30_09-56-36.png)
-
-</summary>
-</details>
-
-<details>
-<summary>Modify Network Info Page</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-59-30.png)
-
-</summary>
-</details>
-
-<details>
-<summary>Modify Route Page</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-57-31.png)
-
-</summary>
-</details>
-
-<details>
-<summary>Modify IP Assignment Pool Page</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-57-42.png)
-
-</summary>
-</details>
-
-<details>
-<summary>Modify DNS Page</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_09-59-57.png)
-
-</summary>
-</details>
-
-<details>
-<summary>Modify Member Page</summary>
-
-![Networks](docs/imgs/Snipaste_2024-12-30_10-00-07.png)
+![Networks](docs/imgs/Networks.png)
 
 </summary>
 </details>
