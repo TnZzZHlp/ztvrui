@@ -63,6 +63,16 @@ jobs:
               with:
                   ref: ${{ github.ref }}
 
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: latest
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v3
+              with:
+                  version: latest
+
             - name: Install Rust Toolchain Components
               uses: dtolnay/rust-toolchain@stable
               with:
@@ -75,7 +85,6 @@ jobs:
             - name: Build Frontend
               run: |
                   cd frontend
-                  npm install -g pnpm
                   pnpm install
                   pnpm run build
                   cp -r dist ../backend/
