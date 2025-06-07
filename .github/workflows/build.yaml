@@ -87,6 +87,7 @@ jobs:
                   cd frontend
                   pnpm install
                   pnpm run build
+                  rm -rf ../backend/dist
                   cp -r dist ../backend/
 
             - name: Build
