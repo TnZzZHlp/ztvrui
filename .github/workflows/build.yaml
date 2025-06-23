@@ -82,7 +82,19 @@ jobs:
             - name: Init Submodules
               run: git submodule update --init --recursive
 
+            - name: Build Frontend for windows
+              if: ${{ contains(matrix.target, 'windows') }}
+              shell: pwsh
+              run: |
+                  cd frontend
+                  pnpm install
+                  pnpm run build
+                  Remove-Item -Path ../backend/dist -Recurse -Force -ErrorAction SilentlyContinue
+                  Copy-Item -Path ./dist -Destination ../backend -Recurse
+
             - name: Build Frontend
+              if: ${{ !contains(matrix.target, 'windows') }}
+              shell: bash
               run: |
                   cd frontend
                   pnpm install
