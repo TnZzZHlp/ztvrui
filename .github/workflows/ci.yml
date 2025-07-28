@@ -76,7 +76,7 @@ jobs:
 
             - uses: Swatinem/rust-cache@v2
               with:
-                  workspaces: "backend/target"
+                  workspaces: "backend"
 
             - name: Run Backend tests
               run: |
