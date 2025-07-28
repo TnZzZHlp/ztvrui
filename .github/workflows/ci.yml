@@ -75,6 +75,8 @@ jobs:
               run: rustup toolchain install stable --profile minimal
 
             - uses: Swatinem/rust-cache@v2
+              with:
+                  workspaces: "backend/target"
 
             - name: Run Backend tests
               run: |
