@@ -1,41 +1,68 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
 
 jobs:
-  build-and-lint:
-    runs-on: ubuntu-latest
+    build-and-lint:
+        runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [latest]
+        strategy:
+            matrix:
+                node-version: [latest]
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
+            - name: Set up Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: latest
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+            - name: Install dependencies
+              run: |
+                  cd frontend
+                  pnpm install --no-frozen-lockfile
 
-      - name: Lint with ESLint
-        run: pnpm run lint
+            - name: Lint with ESLint
+              run: |
+                  cd frontend
+                  pnpm run lint
 
-      - name: Type check with TypeScript
-        run: pnpm run type-check
+            - name: Type check with TypeScript
+              run: |
+                  cd frontend
+                  pnpm run type-check
 
-      - name: Build project
-        run: pnpm run build
+            - name: Build project
+              run: |
+                  cd frontend
+                  pnpm run build
+
+            - name: Move build artifacts
+              run: |
+                  rm -rf backend/dist
+                  cp -r frontend/dist ../backend/
+
+            - run: rustup toolchain install stable --profile minimal
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Build
+              run: |
+                  cd backend
+                  cargo build --verbose
+
+            - name: Run tests
+              run: |
+                  cd backend
+                  cargo test --verbose
