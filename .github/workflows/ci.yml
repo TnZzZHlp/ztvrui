@@ -75,12 +75,18 @@ jobs:
 
             - uses: Swatinem/rust-cache@v2
 
+            - name: Run Backend tests
+              run: |
+                  cd backend
+                  cargo test --verbose
+
             - name: Build Backend
               run: |
                   cd backend
                   cargo build --verbose
 
-            - name: Run Backend tests
-              run: |
-                  cd backend
-                  cargo test --verbose
+            - name: Upload backend build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ztvrui
+                  path: backend/target/release/backend
