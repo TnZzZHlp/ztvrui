@@ -1,0 +1,97 @@
+const en = {
+  auth: {
+    forgotPassword: 'Forgot Password',
+    login: 'Login',
+    loginFailed: 'Login failed, please check username and password',
+    logout: 'Logout',
+    modifyInfo: 'Modify Information',
+    password: 'Password',
+    username: 'Username',
+  },
+  common: {
+    add: 'Add',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    copied: 'Copied',
+    copyFailed: 'Copy failed',
+    return: 'Return',
+    submit: 'Submit',
+    updateFailed: 'Update failed',
+    updateSuccess: 'Update successful',
+  },
+  network: {
+    add: {
+      default: 'Add Network',
+    },
+    creationTime: 'Creation Time',
+    default: 'Network',
+    delete: {
+      default: 'Delete Network',
+      failed: 'Network deletion failed',
+      notice: 'Confirm delete network? This operation cannot be recovered',
+      success: 'Network deleted successfully',
+    },
+    detail: {
+      default: 'Network Details',
+      failGet: 'Failed to get network details',
+      members: 'Network Members',
+      overview: 'Network Overview',
+      rules: 'Network Rules',
+      settings: 'Network Settings',
+    },
+    dns: {
+      domain: 'Domain',
+      servers: 'DNS Servers',
+    },
+    dnsDomain: 'DNS Domain',
+    enableBroadcast: 'Enable Broadcast',
+    enter: 'Enter Network',
+    id: 'Network ID',
+    ip: 'IP Address',
+    ipAssignmentPools: {
+      default: 'IP Assignment Pools',
+      ipRangeEnd: 'End IP',
+      ipRangeStart: 'Start IP',
+      invalidedIP: 'Invalid IP',
+    },
+    ipv4Assignment: {
+      default: 'IPv4 Assignment Mode',
+      zt: 'ZeroTier Assignment',
+    },
+    ipv6Assignment: {
+      '6plane': '6plane Assignment',
+      default: 'IPv6 Assignment Mode',
+      rfc4193: 'RFC 4193 Assignment',
+      zt: 'ZeroTier Assignment',
+    },
+    member: {
+      activeBridge: 'Allow Bridging',
+      autoAssignIps: 'Auto-assign IPs',
+      deleteConfirm: 'Confirm delete member? This operation cannot be recovered',
+      deleteFailed: 'Member deletion failed',
+      deleteSuccess: 'Member deleted successfully',
+      error: 'Failed to get member list',
+      id: 'Member ID',
+      unnamed: 'Unnamed Member',
+    },
+    multicastLimit: 'Multicast Limit',
+    mtuTooLow: 'MTU too low, please set to 1280 or higher',
+    name: 'Network Name',
+    routes: 'Routes',
+    rules: {
+      default: 'Network Rules',
+      warn: 'Network rules will be converted to ZeroTier rule format after being saved in browser. Once browser cache is cleared, the original text will be lost. Please remember to backup',
+    },
+    type: {
+      default: 'Network Type',
+      private: 'Private Network',
+      public: 'Public Network',
+    },
+    via: {
+      default: 'Next Hop',
+      notice: 'Leave empty for LAN network',
+    },
+  },
+}
+
+export default en

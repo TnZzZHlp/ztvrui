@@ -1,0 +1,146 @@
+# .github/workflows/build.yml
+name: Build
+
+on:
+    push:
+        tags:
+            - "v*"
+
+    workflow_dispatch:
+
+jobs:
+    build:
+        name: build ${{ matrix.target }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - target: x86_64-pc-windows-msvc
+                      os: windows-latest
+                      archive: zip
+                    # - target: i686-pc-windows-gnu  # error: linker `i686-w64-mingw32-gcc` not found
+                    #   os: windows-latest
+                    #   archive: zip
+                    #   - target: x86_64-apple-darwin
+                    #     os: macos-latest
+                    #     archive: zip
+                    #   - target: aarch64-apple-darwin
+                    #     os: macos-latest
+                    #     archive: zip
+                    #   - target: aarch64-unknown-linux-musl
+                    #     os: ubuntu-latest
+                    #     archive: tar.gz tar.xz tar.zst
+                    # - target: arch64-unknown-linux-musl
+                    #   archive: tar.gz tar.xz tar.zst
+                    # - target: x86_64-unknown-linux-musl
+                    #   os: ubuntu-latest
+                    #   archive: tar.gz tar.xz tar.zst
+                    - target: x86_64-unknown-linux-gnu
+                      os: ubuntu-latest
+                      archive: tar.gz tar.xz tar.zst
+                #   - target: arm-unknown-linux-musleabi
+                #     os: ubuntu-latest
+                #     archive: tar.gz tar.xz tar.zst
+                #   - target: arm-unknown-linux-musleabihf
+                #     os: ubuntu-latest
+                #     archive: tar.gz tar.xz tar.zst
+                # - target: mips-unknown-linux-musl
+                #   archive: tar.gz tar.xz tar.zst
+                # - target: mips-unknown-linux-musl
+                #   archive: tar.gz tar.xz tar.zst
+                # - target: mips64-unknown-linux-muslabi64
+                #   archive: tar.gz tar.xz tar.zst
+                # - target: x86_64-unknown-freebsd
+                #   os: ubuntu-latest
+                #   archive: tar.gz tar.xz tar.zst
+
+        runs-on: ${{matrix.os}}
+        env:
+            DIST_DIR: ztvrui-${{ matrix.target }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: latest
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v3
+              with:
+                  version: latest
+
+            - name: Install Rust Toolchain Components
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+                  target: ${{ matrix.target }}
+
+            - name: Init Submodules
+              run: git submodule update --init --recursive
+
+            - name: Build Frontend
+              run: |
+                  cd frontend
+                  pnpm install
+                  pnpm run build
+                  rm -rf ../backend/dist
+                  cp -r dist ../backend/
+
+            - name: Build
+              run: |
+                  cd backend
+                  cargo build --release --target ${{ matrix.target }}
+
+            - name: Prepare package
+              run: |
+                  mkdir $DIST_DIR
+                  cp LICENSE $DIST_DIR
+                  cp example.config.json $DIST_DIR
+                  echo "Version: ${{ github.ref_name }}" > $DIST_DIR/version
+                  echo "Build date: $(date)" >> $DIST_DIR/version
+                  echo "Commit: $(git rev-parse HEAD)" >> $DIST_DIR/version
+              shell: bash
+
+            - name: Publish archive
+              if: ${{ !contains(matrix.target, 'windows') }}
+              env:
+                  ARCHIVE_FILE: ztvrui-${{ matrix.target }}-${{ github.ref_name }}.tar.gz
+              run: |
+                  cp backend/target/${{ matrix.target }}/release/backend $DIST_DIR/ztvrui
+                  tar -zcvf $ARCHIVE_FILE $DIST_DIR
+                  shasum -a256 $ARCHIVE_FILE > $ARCHIVE_FILE-sha256sum.txt
+                  echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
+
+            - name: Publish zip archive windows
+              if: ${{ contains(matrix.target, 'windows') }}
+              env:
+                  ARCHIVE_FILE: ztvrui-${{ matrix.target }}-${{ github.ref_name }}.zip
+              run: |
+                  cp backend/target/${{ matrix.target }}/release/backend.exe $DIST_DIR/ztvrui.exe
+                  7z a -tzip $ARCHIVE_FILE $DIST_DIR
+                  echo ${{ hashFiles(env.ARCHIVE_FILE) }} > $ARCHIVE_FILE-sha256sum.txt
+                  echo "archive_file=$ARCHIVE_FILE" >> $GITHUB_ENV
+              shell: bash
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ztvrui-${{ matrix.target }}-${{ github.ref_name }}
+                  retention-days: 30
+                  path: ${{ env.archive_file }}
+
+            - name: Publish release
+              uses: softprops/action-gh-release@v2.0.6
+              if: ${{ startsWith(github.ref_name, 'v') }}
+              with:
+                  draft: false
+                  tag_name: ${{ github.ref_name }}
+                  files: |
+                      ${{ env.archive_file }}
+                      ${{ env.archive_file }}-sha256sum.txt
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

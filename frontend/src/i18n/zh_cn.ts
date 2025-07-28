@@ -1,0 +1,97 @@
+const zh_cn = {
+  auth: {
+    forgotPassword: '忘记密码',
+    login: '登录',
+    loginFailed: '登录失败，请检查用户名和密码',
+    logout: '退出登录',
+    modifyInfo: '修改信息',
+    password: '密码',
+    username: '用户名',
+  },
+  common: {
+    add: '增加',
+    cancel: '取消',
+    confirm: '确认',
+    copied: '已复制',
+    copyFailed: '复制失败',
+    return: '返回',
+    submit: '提交',
+    updateFailed: '更新失败',
+    updateSuccess: '更新成功',
+  },
+  network: {
+    add: {
+      default: '添加网络',
+    },
+    creationTime: '创建时间',
+    default: '网络',
+    delete: {
+      default: '删除网络',
+      failed: '网络删除失败',
+      notice: '确认删除网络？该操作无法恢复',
+      success: '网络删除成功',
+    },
+    detail: {
+      default: '网络详情',
+      failGet: '获取网络详情失败',
+      members: '网络成员',
+      overview: '网络概览',
+      rules: '网络规则',
+      settings: '网络设置',
+    },
+    dns: {
+      domain: '域名',
+      servers: 'DNS 服务器',
+    },
+    dnsDomain: 'DNS 域名',
+    enableBroadcast: '启用广播',
+    enter: '进入网络',
+    id: '网络Id',
+    ip: 'IP 地址',
+    ipAssignmentPools: {
+      default: 'IP 分配池',
+      ipRangeEnd: '结束 IP',
+      ipRangeStart: '起始 IP',
+      invalidedIP: 'IP 不合法',
+    },
+    ipv4Assignment: {
+      default: 'IPv4 分配模式',
+      zt: 'ZeroTier 分配',
+    },
+    ipv6Assignment: {
+      '6plane': '6plane 分配',
+      default: 'IPv6 分配模式',
+      rfc4193: 'RFC 4193 分配',
+      zt: 'ZeroTier 分配',
+    },
+    member: {
+      activeBridge: '允许桥接',
+      autoAssignIps: '自动分配 IP',
+      deleteConfirm: '确认删除成员？该操作无法恢复',
+      deleteFailed: '成员删除失败',
+      deleteSuccess: '成员删除成功',
+      error: '获取成员列表失败',
+      id: '成员 ID',
+      unnamed: '未命名成员',
+    },
+    multicastLimit: '多播限制',
+    mtuTooLow: 'MTU 过低, 请设置为 1280 或更高',
+    name: '网络名称',
+    routes: '路由',
+    rules: {
+      default: '网络规则',
+      warn: '网络规则将会在保存在浏览器中后转换成 ZeroTier 的规则格式，一旦清除浏览器缓存原文将会丢失，请注意备份',
+    },
+    type: {
+      default: '网络类型',
+      private: '私有网络',
+      public: '公共网络',
+    },
+    via: {
+      default: '下一跳',
+      notice: '留空则为LAN网络',
+    },
+  },
+}
+
+export default zh_cn
