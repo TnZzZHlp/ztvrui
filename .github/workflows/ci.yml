@@ -51,7 +51,7 @@ jobs:
             - name: Move build artifacts
               run: |
                   rm -rf backend/dist
-                  cp -r frontend/dist ../backend/
+                  cp -r frontend/dist backend/backend/
 
             - run: rustup toolchain install stable --profile minimal
 
