@@ -9,18 +9,15 @@ on:
 jobs:
     build-frontend:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                node-version: [latest]
 
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Set up Node.js ${{ matrix.node-version }}
+            - name: Set up Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version: "latest"
 
             - name: Install pnpm
               uses: pnpm/action-setup@v4
