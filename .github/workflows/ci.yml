@@ -92,4 +92,4 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: ztvrui
-                  path: backend/target/release/backend
+                  path: backend/target/debug/backend
