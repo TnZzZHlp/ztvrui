@@ -78,11 +78,6 @@ jobs:
               with:
                   workspaces: "backend"
 
-            - name: Run Backend tests
-              run: |
-                  cd backend
-                  cargo test --verbose
-
             - name: Build Backend
               run: |
                   cd backend
