@@ -1,7 +1,8 @@
 import type { PeerInfo } from '@/types/zerotier/peers'
+import { authenticatedFetch } from '@/utils/apiUtils'
 
 export function listPeers(): Promise<PeerInfo[]> {
-  return fetch(`/ztapi/peer`, {
+  return authenticatedFetch(`/ztapi/peer`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -15,7 +16,7 @@ export function listPeers(): Promise<PeerInfo[]> {
 }
 
 export function getJoinedNetworkById(memberId: string): Promise<PeerInfo> {
-  return fetch(`/ztapi/peer/${memberId}`, {
+  return authenticatedFetch(`/ztapi/peer/${memberId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

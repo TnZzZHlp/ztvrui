@@ -1,7 +1,8 @@
 import type { Auth } from '@/types/manage'
+import { authenticatedFetch } from '@/utils/apiUtils'
 
 export function editProfile(auth: Auth): Promise<void> {
-  return fetch(`/api/editprofile`, {
+  return authenticatedFetch(`/api/editprofile`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -5,9 +5,10 @@ import type {
   ControllerNetworkMemberInfo,
   ControllerNetworkMemberSettings,
 } from '@/types/zerotier/controller'
+import { authenticatedFetch } from '@/utils/apiUtils'
 
 export function controllerStatus(): Promise<ControllerStatusInfo> {
-  return fetch(`/ztapi/controller`, {
+  return authenticatedFetch(`/ztapi/controller`, {
     method: 'GET',
   }).then((response) => {
     if (!response.ok) {
@@ -18,7 +19,7 @@ export function controllerStatus(): Promise<ControllerStatusInfo> {
 }
 
 export function listNetworkIds(): Promise<string[]> {
-  return fetch(`/ztapi/controller/network`, {
+  return authenticatedFetch(`/ztapi/controller/network`, {
     method: 'GET',
   }).then((response) => {
     if (!response.ok) {
@@ -31,7 +32,7 @@ export function listNetworkIds(): Promise<string[]> {
 export function generateRandomNetworkId(
   networkInfo: ControllerNetworkInfo,
 ): Promise<ControllerNetworkInfo> {
-  return fetch(`/ztapi/controller/network`, {
+  return authenticatedFetch(`/ztapi/controller/network`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +47,7 @@ export function generateRandomNetworkId(
 }
 
 export function getNetworkById(networkId: string): Promise<ControllerNetworkInfo> {
-  return fetch(`/ztapi/controller/network/${networkId}`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ export function createOrUpdateNetwork(
   networkId: string,
   controllerinfo: ControllerNetworkInfo,
 ): Promise<ControllerNetworkInfo> {
-  return fetch(`/ztapi/controller/network/${networkId}`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ export function createOrUpdateNetwork(
 }
 
 export function deleteNetwork(networkId: string): Promise<void> {
-  return fetch(`/ztapi/controller/network/${networkId}`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -91,7 +92,7 @@ export function deleteNetwork(networkId: string): Promise<void> {
 }
 
 export function listNetworkMemberIds(networkId: string): Promise<Members> {
-  return fetch(`/ztapi/controller/network/${networkId}/member`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ export function getNetworkMemberById(
   networkId: string,
   memberId: string,
 ): Promise<ControllerNetworkMemberInfo> {
-  return fetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ export function createOrUpdateNetworkMember(
   memberId: string,
   memberSettings: ControllerNetworkMemberSettings,
 ): Promise<ControllerNetworkMemberInfo> {
-  return fetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -144,7 +145,7 @@ export function deleteNetworkMember(
   networkId: string,
   memberId: string,
 ): Promise<ControllerNetworkMemberInfo> {
-  return fetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
+  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',

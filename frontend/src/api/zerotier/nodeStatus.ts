@@ -1,7 +1,8 @@
 import type { NodeStatus } from '@/types/zerotier/nodeStatus'
+import { authenticatedFetch } from '@/utils/apiUtils'
 
 export function nodeStatus(): Promise<NodeStatus> {
-  return fetch(`/ztapi/status`, {
+  return authenticatedFetch(`/ztapi/status`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

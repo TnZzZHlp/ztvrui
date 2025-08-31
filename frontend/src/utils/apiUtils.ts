@@ -19,6 +19,7 @@ export async function authenticatedFetch(
 
   // Add auth headers to the request
   const authHeaders = tokenManager.getAuthHeader()
+  console.debug('Auth Headers:', authHeaders)
   const headers = {
     'Content-Type': 'application/json',
     ...authHeaders,
