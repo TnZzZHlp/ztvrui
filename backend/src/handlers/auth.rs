@@ -29,14 +29,6 @@ pub async fn login(
     }
 }
 
-pub async fn logout() -> Result<impl IntoResponse> {
-    // With JWT, logout is handled client-side by removing the token
-    // In production, you might want to implement a token blacklist
-    Ok(Json(json!({
-        "message": "Logout successful"
-    })))
-}
-
 pub async fn check_auth(Extension(claims): Extension<Claims>) -> Result<impl IntoResponse> {
     Ok(Json(json!({
         "authenticated": true,
@@ -71,7 +63,7 @@ pub async fn refresh_token(
 ) -> Result<impl IntoResponse> {
     // Use the validated claims to get the username
     let username = &claims.username;
-    
+
     // Create a new token
     let (new_token, expires_at) = app_state.auth.create_token(username)?;
 

@@ -18,8 +18,7 @@ impl StaticFileService {
 
         match FRONTEND.get_file(file_path) {
             Some(file) => {
-                let mime_type = mime_guess::from_path(file_path)
-                    .first_or_octet_stream();
+                let mime_type = mime_guess::from_path(file_path).first_or_octet_stream();
                 let content_type = mime_type.as_ref();
 
                 (

@@ -1,7 +1,6 @@
 use axum::{middleware::from_fn_with_state, Router};
 use clap::Parser;
 use tokio::net::TcpListener;
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 mod error;
 mod handlers;
@@ -62,8 +61,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )),
         )
         .fallback(handlers::serve_static_files)
-        .layer(CorsLayer::permissive())
-        .layer(TraceLayer::new_for_http())
+        .layer(axum::middleware::from_fn(
+            crate::middleware::logging_middleware,
+        ))
         .with_state(app_state);
 
     // Get listen address from config

@@ -1,10 +1,6 @@
 use crate::services::StaticFileService;
-use axum::{
-    extract::Path,
-    response::IntoResponse,
-};
+use axum::{http::Uri, response::IntoResponse};
 
-pub async fn serve_static_files(path: Option<Path<String>>) -> impl IntoResponse {
-    let file_path = path.map(|Path(p)| p).unwrap_or_else(|| "/".to_string());
-    StaticFileService::serve_file(&file_path)
+pub async fn serve_static_files(path: Uri) -> impl IntoResponse {
+    StaticFileService::serve_file(&path.to_string())
 }

@@ -7,9 +7,7 @@ use axum::{
 
 // Public API routes (no authentication required)
 pub fn public_api_routes() -> Router<AppState> {
-    Router::new()
-        .route("/login", post(login))
-        .route("/logout", post(logout))
+    Router::new().route("/login", post(login))
 }
 
 // Protected API routes (authentication required)
@@ -22,5 +20,5 @@ pub fn protected_api_routes() -> Router<AppState> {
 
 // ZeroTier routes (authentication required)
 pub fn zerotier_routes() -> Router<AppState> {
-    Router::new().route("/*path", any(forward_to_zerotier))
+    Router::new().route("/{*wildcard}", any(forward_to_zerotier))
 }
