@@ -1,99 +1,78 @@
-mod config;
-mod zerotier;
-
-mod statics;
-
-use statics::index;
-
-mod api;
-use api::*;
-
+use axum::{middleware::from_fn_with_state, Router};
 use clap::Parser;
-use salvo::logging::Logger;
-use salvo::prelude::*;
-use std::collections::HashMap;
-use tokio::sync::RwLock;
-use tokio::time::Instant;
+use tokio::net::TcpListener;
 
-lazy_static::lazy_static! {
-    static ref CONFIG: RwLock<config::AppConfig> = RwLock::new(
-        config::AppConfig::init(Args::parse().config)
-    );
-    static ref ZEROTIER: RwLock<zerotier::ZeroTier> = RwLock::new(zerotier::ZeroTier::new());
-    static ref CONFIG_PATH: String = Args::parse().config;
-    static ref COOKIE: RwLock<HashMap<String, Instant>> = RwLock::new(HashMap::new());
-}
+mod error;
+mod handlers;
+mod middleware;
+mod models;
+mod routes;
+mod services;
+mod state;
+
+use services::ConfigService;
+use state::AppState;
 
 #[derive(Parser)]
+#[command(name = "backend")]
+#[command(about = "ZeroTier UI Backend Server")]
 struct Args {
-    #[clap(short, long, default_value = "config.json")]
+    #[arg(short, long, default_value = "config.json")]
     config: String,
 }
 
 #[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt().init();
-
-    let config = CONFIG.read().await;
-
-    // Initialize ZeroTier
-    {
-        let mut zerotier = ZEROTIER.write().await;
-        zerotier.init(&config.zerotier);
-        drop(zerotier);
-    }
-
-    let listen = config.listen.clone();
-    drop(config);
-
-    let router = Router::new()
-        .push(
-            Router::with_path("api")
-                .push(Router::with_path("login").post(login))
-                .push(Router::with_path("logout").hoop(auth).get(logout))
-                .push(Router::with_path("check").hoop(auth).get(check))
-                .push(Router::with_path("editprofile").hoop(auth).post(modify)),
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tracing
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .event_format(
+            tracing_subscriber::fmt::format()
+                .with_target(false)
+                .with_file(true)
+                .with_line_number(true),
         )
-        .push(
-            Router::with_path("ztapi/{**}")
-                .hoop(auth)
-                .goal(forward_to_zt),
+        .init();
+
+    let args = Args::parse();
+
+    // Initialize services
+    let config_service = ConfigService::new(args.config)?;
+    let app_state = AppState::new(config_service.clone());
+
+    // Build the application router
+    let app = Router::new()
+        // Public API routes
+        .nest("/api", routes::public_api_routes())
+        // Protected API routes with authentication middleware
+        .nest(
+            "/api",
+            routes::protected_api_routes().layer(from_fn_with_state(
+                app_state.clone(),
+                crate::middleware::auth_middleware,
+            )),
         )
-        .push(Router::with_path("{**}").get(index));
-    let service = Service::new(router).hoop(Logger::new());
-    let acceptor = TcpListener::new(listen).bind().await;
-    Server::new(acceptor).serve(service).await;
-}
+        // ZeroTier routes with authentication middleware
+        .nest(
+            "/ztapi",
+            routes::zerotier_routes().layer(from_fn_with_state(
+                app_state.clone(),
+                crate::middleware::auth_middleware,
+            )),
+        )
+        .fallback(handlers::serve_static_files)
+        .layer(axum::middleware::from_fn(
+            crate::middleware::logging_middleware,
+        ))
+        .with_state(app_state);
 
-#[handler]
-async fn forward_to_zt(req: &mut Request, res: &mut Response) {
-    let result = (async {
-        let path = req.uri().path().replace("/ztapi/", "");
-        let body = req.parse_json::<serde_json::Value>().await.ok();
+    // Get listen address from config
+    let listen_addr = config_service.get_listen_address();
+    tracing::info!("Starting server on {}", listen_addr);
 
-        let zt_response = ZEROTIER
-            .read()
-            .await
-            .forward(&path, req.method().clone(), body)
-            .await
-            .map_err(|e| StatusError::bad_request().brief(e.to_string()))?;
+    // Start the server
+    let listener = TcpListener::bind(&listen_addr).await?;
+    axum::serve(listener, app).await?;
 
-        let zt_status = zt_response.status();
-
-        let response_body = zt_response
-            .json::<serde_json::Value>()
-            .await
-            .map_err(|_| StatusError::internal_server_error().brief("Failed to parse response"))?;
-
-        Ok::<_, StatusError>((zt_status, response_body))
-    })
-    .await;
-
-    match result {
-        Ok((status, body)) => {
-            res.status_code(status);
-            res.render(Json(body));
-        }
-        Err(err) => res.render(err),
-    }
+    Ok(())
 }

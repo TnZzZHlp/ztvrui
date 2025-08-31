@@ -3,9 +3,12 @@ const zh_cn = {
     forgotPassword: '忘记密码',
     login: '登录',
     loginFailed: '登录失败，请检查用户名和密码',
+    loginSuccessful: '登录成功！欢迎',
     logout: '退出登录',
     modifyInfo: '修改信息',
     password: '密码',
+    pleaseEnterCredentials: '请输入用户名和密码',
+    tokenExpired: '会话已过期，请重新登录',
     username: '用户名',
   },
   common: {
