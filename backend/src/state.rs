@@ -10,9 +10,9 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(config: ConfigService) -> Self {
-        let auth = AuthService::new();
+        let auth = AuthService::new(config.get_zerotier_config().auth_token);
         let zerotier = ZeroTierService::new(config.get_zerotier_config());
-        
+
         Self {
             config,
             auth,

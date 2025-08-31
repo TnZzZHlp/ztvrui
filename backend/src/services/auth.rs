@@ -1,69 +1,74 @@
-use base64::prelude::*;
-use std::collections::HashMap;
+use crate::error::{AppError, Result};
+use chrono::{Duration, Utc};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::sync::RwLock;
-use tokio::time::Instant;
-use uuid::Uuid;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,      // Subject (user identifier)
+    pub exp: i64,         // Expiration time
+    pub iat: i64,         // Issued at
+    pub username: String, // Username for convenience
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub token: String,
+    pub message: String,
+    pub expires_at: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthCheckResponse {
+    pub authenticated: bool,
+    pub username: String,
+    pub expires_at: i64,
+}
 
 #[derive(Clone)]
 pub struct AuthService {
-    sessions: Arc<RwLock<HashMap<String, Instant>>>,
-    session_duration: Duration,
+    encoding_key: Arc<EncodingKey>,
+    decoding_key: Arc<DecodingKey>,
+    token_duration: Duration,
 }
 
 impl AuthService {
-    pub fn new() -> Self {
+    pub fn new(secret: String) -> Self {
         Self {
-            sessions: Arc::new(RwLock::new(HashMap::new())),
-            session_duration: Duration::from_secs(3600 * 24 * 7), // 7 days
+            encoding_key: Arc::new(EncodingKey::from_secret(secret.as_ref())),
+            decoding_key: Arc::new(DecodingKey::from_secret(secret.as_ref())),
+            token_duration: Duration::hours(168),
         }
     }
 
-    pub async fn create_session(&self) -> String {
-        let session_id = BASE64_STANDARD.encode(
-            format!(
-                "{}:{}",
-                Uuid::new_v4(),
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis()
-            )
-            .as_bytes(),
-        );
+    pub fn create_token(&self, username: &str) -> Result<(String, i64)> {
+        let now = Utc::now();
+        let exp = now + self.token_duration;
 
-        let mut sessions = self.sessions.write().await;
-        sessions.insert(session_id.clone(), Instant::now());
+        let claims = Claims {
+            sub: username.to_string(),
+            exp: exp.timestamp(),
+            iat: now.timestamp(),
+            username: username.to_string(),
+        };
 
-        session_id
+        let token = encode(&Header::default(), &claims, &self.encoding_key).map_err(|e| {
+            AppError::InternalServerError(format!("Failed to create JWT token: {}", e))
+        })?;
+
+        Ok((token, exp.timestamp()))
     }
 
-    pub async fn validate_session(&self, session_id: &str) -> bool {
-        let mut sessions = self.sessions.write().await;
+    pub fn validate_token(&self, token: &str) -> Result<Claims> {
+        let validation = Validation::new(Algorithm::HS256);
 
-        if let Some(timestamp) = sessions.get_mut(session_id) {
-            if timestamp.elapsed() < self.session_duration {
-                // Session is valid, extend it
-                *timestamp = Instant::now();
-                true
-            } else {
-                // Session expired, remove it
-                sessions.remove(session_id);
-                false
-            }
-        } else {
-            false
-        }
-    }
-
-    pub async fn remove_session(&self, session_id: &str) {
-        let mut sessions = self.sessions.write().await;
-        sessions.remove(session_id);
-    }
-
-    pub async fn cleanup_expired_sessions(&self) {
-        let mut sessions = self.sessions.write().await;
-        sessions.retain(|_, timestamp| timestamp.elapsed() < self.session_duration);
+        decode::<Claims>(token, &self.decoding_key, &validation)
+            .map(|token_data| token_data.claims)
+            .map_err(|e| match e.kind() {
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature => AppError::Unauthorized,
+                jsonwebtoken::errors::ErrorKind::InvalidToken => AppError::Unauthorized,
+                _ => AppError::InternalServerError(format!("JWT validation error: {}", e)),
+            })
     }
 }

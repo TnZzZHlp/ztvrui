@@ -1,13 +1,9 @@
 use crate::error::{AppError, Result};
 use crate::models::{LoginRequest, UpdateProfileRequest};
+use crate::services::auth::Claims;
 use crate::state::AppState;
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
-use axum_extra::extract::{cookie::Cookie, CookieJar};
+use axum::{extract::State, response::IntoResponse, Extension, Json};
+use serde_json::json;
 
 pub async fn login(
     State(app_state): State<AppState>,
@@ -18,76 +14,70 @@ pub async fn login(
         .verify_user(&request.username, &request.password)
         .await
     {
-        let session_id = app_state.auth.create_session().await;
-        
-        let cookie = Cookie::build(("Token", session_id))
-            .path("/")
-            .permanent()
-            .build();
+        // Create JWT token
+        let (token, expires_at) = app_state.auth.create_token(&request.username)?;
 
-        let jar = CookieJar::new().add(cookie);
-        
-        Ok((jar, StatusCode::NO_CONTENT))
+        // Return structured response with token info
+        Ok(Json(json!({
+            "token": token,
+            "message": "Login successful",
+            "expires_at": expires_at,
+            "username": request.username
+        })))
     } else {
         Err(AppError::Unauthorized)
     }
 }
 
-pub async fn logout(
-    State(app_state): State<AppState>,
-    jar: CookieJar,
-) -> Result<impl IntoResponse> {
-    // Check authentication
-    let token = jar
-        .get("Token")
-        .and_then(|cookie| Some(cookie.value()))
-        .ok_or(AppError::Unauthorized)?;
-
-    if !app_state.auth.validate_session(token).await {
-        return Err(AppError::Unauthorized);
-    }
-
-    app_state.auth.remove_session(token).await;
-
-    let jar = jar.remove(Cookie::from("Token"));
-    Ok((jar, StatusCode::NO_CONTENT))
+pub async fn logout() -> Result<impl IntoResponse> {
+    // With JWT, logout is handled client-side by removing the token
+    // In production, you might want to implement a token blacklist
+    Ok(Json(json!({
+        "message": "Logout successful"
+    })))
 }
 
-pub async fn check_auth(
-    State(app_state): State<AppState>,
-    jar: CookieJar,
-) -> Result<impl IntoResponse> {
-    let token = jar
-        .get("Token")
-        .and_then(|cookie| Some(cookie.value()))
-        .ok_or(AppError::Unauthorized)?;
-
-    if !app_state.auth.validate_session(token).await {
-        return Err(AppError::Unauthorized);
-    }
-
-    Ok(StatusCode::NO_CONTENT)
+pub async fn check_auth(Extension(claims): Extension<Claims>) -> Result<impl IntoResponse> {
+    Ok(Json(json!({
+        "authenticated": true,
+        "username": claims.username,
+        "expires_at": claims.exp,
+        "issued_at": claims.iat
+    })))
 }
 
 pub async fn update_profile(
     State(app_state): State<AppState>,
-    jar: CookieJar,
+    Extension(claims): Extension<Claims>,
     Json(request): Json<UpdateProfileRequest>,
 ) -> Result<impl IntoResponse> {
-    // Check authentication
-    let token = jar
-        .get("Token")
-        .and_then(|cookie| Some(cookie.value()))
-        .ok_or(AppError::Unauthorized)?;
+    // Claims are already validated by the middleware
+    let _username = &claims.username;
 
-    if !app_state.auth.validate_session(token).await {
-        return Err(AppError::Unauthorized);
-    }
-    
     app_state
         .config
         .update_user_info(&request.username, &request.password)
         .await?;
+
+    Ok(Json(json!({
+        "message": "Profile updated successfully"
+    })))
+}
+
+#[allow(dead_code)]
+pub async fn refresh_token(
+    State(app_state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+) -> Result<impl IntoResponse> {
+    // Use the validated claims to get the username
+    let username = &claims.username;
     
-    Ok(StatusCode::NO_CONTENT)
+    // Create a new token
+    let (new_token, expires_at) = app_state.auth.create_token(username)?;
+
+    Ok(Json(json!({
+        "token": new_token,
+        "expires_at": expires_at,
+        "message": "Token refreshed successfully"
+    })))
 }

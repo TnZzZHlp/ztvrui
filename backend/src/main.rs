@@ -1,9 +1,7 @@
-use axum::Router;
+use axum::{middleware::from_fn_with_state, Router};
 use clap::Parser;
-use std::time::Duration;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod error;
 mod handlers;
@@ -27,12 +25,14 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "backend=debug,tower_http=debug,axum::rejection=trace".into()),
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .event_format(
+            tracing_subscriber::fmt::format()
+                .with_target(false)
+                .with_file(true)
+                .with_line_number(true),
         )
-        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let args = Args::parse();
@@ -41,20 +41,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config_service = ConfigService::new(args.config)?;
     let app_state = AppState::new(config_service.clone());
 
-    // Start background task to cleanup expired sessions
-    let auth_service_cleanup = app_state.auth.clone();
-    tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(3600)); // Cleanup every hour
-        loop {
-            interval.tick().await;
-            auth_service_cleanup.cleanup_expired_sessions().await;
-        }
-    });
-
     // Build the application router
     let app = Router::new()
-        .nest("/api", routes::api_routes())
-        .nest("/ztapi", routes::zerotier_routes())
+        // Public API routes
+        .nest("/api", routes::public_api_routes())
+        // Protected API routes with authentication middleware
+        .nest(
+            "/api",
+            routes::protected_api_routes().layer(from_fn_with_state(
+                app_state.clone(),
+                crate::middleware::auth_middleware,
+            )),
+        )
+        // ZeroTier routes with authentication middleware
+        .nest(
+            "/ztapi",
+            routes::zerotier_routes().layer(from_fn_with_state(
+                app_state.clone(),
+                crate::middleware::auth_middleware,
+            )),
+        )
         .fallback(handlers::serve_static_files)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())

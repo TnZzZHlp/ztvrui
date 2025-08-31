@@ -5,21 +5,22 @@ use axum::{
     Router,
 };
 
-pub fn api_routes() -> Router<AppState> {
+// Public API routes (no authentication required)
+pub fn public_api_routes() -> Router<AppState> {
     Router::new()
         .route("/login", post(login))
-        .route("/logout", get(logout))
+        .route("/logout", post(logout))
+}
+
+// Protected API routes (authentication required)
+pub fn protected_api_routes() -> Router<AppState> {
+    Router::new()
         .route("/check", get(check_auth))
         .route("/editprofile", post(update_profile))
+        .route("/refresh", post(refresh_token))
 }
 
+// ZeroTier routes (authentication required)
 pub fn zerotier_routes() -> Router<AppState> {
-    Router::new()
-        .route("/*path", any(forward_to_zerotier))
-}
-
-pub fn static_routes() -> Router<AppState> {
-    Router::new()
-        .route("/", get(serve_static_files))
-        .route("/*path", get(serve_static_files))
+    Router::new().route("/*path", any(forward_to_zerotier))
 }
