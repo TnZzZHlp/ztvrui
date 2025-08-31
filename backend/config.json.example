@@ -1,0 +1,11 @@
+{
+    "info": {
+        "username": "admin",
+        "password": "$2b$08$Ov7I2A7.VfgElKbDdl3WX.qYxbvOZNhq3k8fNxg4E.O.4/4kUjn4."
+    },
+    "listen": "127.0.0.1:3000",
+    "zerotier": {
+        "auth_token": "your_zerotier_auth_token_here",
+        "address": "https://my.zerotier.com/api/v1"
+    }
+}

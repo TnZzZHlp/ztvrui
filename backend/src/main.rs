@@ -1,99 +1,72 @@
-mod config;
-mod zerotier;
-
-mod statics;
-
-use statics::index;
-
-mod api;
-use api::*;
-
+use axum::Router;
 use clap::Parser;
-use salvo::logging::Logger;
-use salvo::prelude::*;
-use std::collections::HashMap;
-use tokio::sync::RwLock;
-use tokio::time::Instant;
+use std::time::Duration;
+use tokio::net::TcpListener;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-lazy_static::lazy_static! {
-    static ref CONFIG: RwLock<config::AppConfig> = RwLock::new(
-        config::AppConfig::init(Args::parse().config)
-    );
-    static ref ZEROTIER: RwLock<zerotier::ZeroTier> = RwLock::new(zerotier::ZeroTier::new());
-    static ref CONFIG_PATH: String = Args::parse().config;
-    static ref COOKIE: RwLock<HashMap<String, Instant>> = RwLock::new(HashMap::new());
-}
+mod error;
+mod handlers;
+mod middleware;
+mod models;
+mod routes;
+mod services;
+mod state;
+
+use services::ConfigService;
+use state::AppState;
 
 #[derive(Parser)]
+#[command(name = "backend")]
+#[command(about = "ZeroTier UI Backend Server")]
 struct Args {
-    #[clap(short, long, default_value = "config.json")]
+    #[arg(short, long, default_value = "config.json")]
     config: String,
 }
 
 #[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt().init();
-
-    let config = CONFIG.read().await;
-
-    // Initialize ZeroTier
-    {
-        let mut zerotier = ZEROTIER.write().await;
-        zerotier.init(&config.zerotier);
-        drop(zerotier);
-    }
-
-    let listen = config.listen.clone();
-    drop(config);
-
-    let router = Router::new()
-        .push(
-            Router::with_path("api")
-                .push(Router::with_path("login").post(login))
-                .push(Router::with_path("logout").hoop(auth).get(logout))
-                .push(Router::with_path("check").hoop(auth).get(check))
-                .push(Router::with_path("editprofile").hoop(auth).post(modify)),
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tracing
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "backend=debug,tower_http=debug,axum::rejection=trace".into()),
         )
-        .push(
-            Router::with_path("ztapi/{**}")
-                .hoop(auth)
-                .goal(forward_to_zt),
-        )
-        .push(Router::with_path("{**}").get(index));
-    let service = Service::new(router).hoop(Logger::new());
-    let acceptor = TcpListener::new(listen).bind().await;
-    Server::new(acceptor).serve(service).await;
-}
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 
-#[handler]
-async fn forward_to_zt(req: &mut Request, res: &mut Response) {
-    let result = (async {
-        let path = req.uri().path().replace("/ztapi/", "");
-        let body = req.parse_json::<serde_json::Value>().await.ok();
+    let args = Args::parse();
 
-        let zt_response = ZEROTIER
-            .read()
-            .await
-            .forward(&path, req.method().clone(), body)
-            .await
-            .map_err(|e| StatusError::bad_request().brief(e.to_string()))?;
+    // Initialize services
+    let config_service = ConfigService::new(args.config)?;
+    let app_state = AppState::new(config_service.clone());
 
-        let zt_status = zt_response.status();
-
-        let response_body = zt_response
-            .json::<serde_json::Value>()
-            .await
-            .map_err(|_| StatusError::internal_server_error().brief("Failed to parse response"))?;
-
-        Ok::<_, StatusError>((zt_status, response_body))
-    })
-    .await;
-
-    match result {
-        Ok((status, body)) => {
-            res.status_code(status);
-            res.render(Json(body));
+    // Start background task to cleanup expired sessions
+    let auth_service_cleanup = app_state.auth.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(3600)); // Cleanup every hour
+        loop {
+            interval.tick().await;
+            auth_service_cleanup.cleanup_expired_sessions().await;
         }
-        Err(err) => res.render(err),
-    }
+    });
+
+    // Build the application router
+    let app = Router::new()
+        .nest("/api", routes::api_routes())
+        .nest("/ztapi", routes::zerotier_routes())
+        .fallback(handlers::serve_static_files)
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http())
+        .with_state(app_state);
+
+    // Get listen address from config
+    let listen_addr = config_service.get_listen_address();
+    tracing::info!("Starting server on {}", listen_addr);
+
+    // Start the server
+    let listener = TcpListener::bind(&listen_addr).await?;
+    axum::serve(listener, app).await?;
+
+    Ok(())
 }
