@@ -10,7 +10,7 @@ export async function authenticatedFetch(
   if (tokenManager.isTokenExpired()) {
     try {
       await refreshToken()
-    } catch (error) {
+    } catch {
       // If refresh fails, clear token and throw error
       tokenManager.clearToken()
       throw new Error('Authentication failed')
@@ -22,7 +22,7 @@ export async function authenticatedFetch(
   const headers = {
     'Content-Type': 'application/json',
     ...authHeaders,
-    ...(options.headers || {}),
+    ...options.headers,
   }
 
   // Make the request
@@ -40,14 +40,14 @@ export async function authenticatedFetch(
       const newHeaders = {
         'Content-Type': 'application/json',
         ...tokenManager.getAuthHeader(),
-        ...(options.headers || {}),
+        ...options.headers,
       }
 
       return fetch(url, {
         ...options,
         headers: newHeaders,
       })
-    } catch (error) {
+    } catch {
       // If refresh fails, clear token
       tokenManager.clearToken()
       throw new Error('Authentication failed')
