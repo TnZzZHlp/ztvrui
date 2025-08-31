@@ -1,0 +1,11 @@
+{
+    "info": {
+        "username": "admin",
+        "password": "$2y$10$dIGGBi25HIcA5evu19z90eAKWnDh0JLDldAl6bKhD.1iXRWoG5pQy"
+    },
+    "listen": "127.0.0.1:3000",
+    "zerotier": {
+        "auth_token": "your_zerotier_auth_token_here",
+        "address": "http://127.0.0.1:9993"
+    }
+}

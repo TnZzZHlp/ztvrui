@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeroTier UI</title>
+</head>
+
+<body>
+    <h1>ZeroTier UI - Axum Version</h1>
+    <p>Welcome to the new Axum-based ZeroTier UI backend!</p>
+
+    <div>
+        <h2>API Endpoints:</h2>
+        <ul>
+            <li>POST /api/login - Login</li>
+            <li>GET /api/logout - Logout (requires auth)</li>
+            <li>GET /api/check - Check auth status (requires auth)</li>
+            <li>POST /api/editprofile - Update profile (requires auth)</li>
+            <li>ANY /ztapi/* - ZeroTier API proxy (requires auth)</li>
+        </ul>
+    </div>
+</body>
+
+</html>

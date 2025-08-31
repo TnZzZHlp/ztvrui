@@ -5,17 +5,41 @@ name = "backend"
 version = "0.1.0"
 
 [dependencies]
-base64 = "0.22.1"
-bcrypt = "0.17.0"
-clap = {version = "4.5.23", features = ["derive"]}
-include_dir = "0.7.4"
-lazy_static = "1.5.0"
-mime_guess = "2.0.5"
-reqwest = {version = "0.12.8", features = ["json"], default-features = false}
-salvo = {version = "0.79.0", features = ["logging", "cors"]}
+# Web framework
+axum = {version = "0.8.4", features = ["macros"]}
+tower = {version = "0.5.2", features = ["util"]}
+tower-http = {version = "0.6.6", features = ["fs", "cors", "trace"]}
+
+# Async runtime
+tokio = {version = "1.43.1", features = ["full"]}
+
+# Serialization
 serde = {version = "1.0.216", features = ["derive"]}
 serde_json = "1.0.133"
-tokio = {version = "1.43.1", features = ["full"]}
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
+
+# HTTP client
+reqwest = {version = "0.12.8", features = ["json"]}
+
+# Authentication & Security
+base64 = "0.22.1"
+bcrypt = "0.17.0"
+chrono = {version = "0.4", features = ["serde"]}
+jsonwebtoken = "9.3"
 uuid = {version = "1.11.0", features = ["v4"]}
+
+# Configuration & CLI
+clap = {version = "4.5.23", features = ["derive"]}
+
+# Static files
+include_dir = "0.7.4"
+mime_guess = "2.0.5"
+
+# Logging
+tracing = "0.1.41"
+tracing-subscriber = {version = "0.3.19", features = ["env-filter"]}
+
+# Error handling
+thiserror = "2.0.16"
+
+# State management
+arc-swap = "1.7"

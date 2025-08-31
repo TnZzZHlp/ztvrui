@@ -3,9 +3,12 @@ const en = {
     forgotPassword: 'Forgot Password',
     login: 'Login',
     loginFailed: 'Login failed, please check username and password',
+    loginSuccessful: 'Login successful! Welcome',
     logout: 'Logout',
     modifyInfo: 'Modify Information',
     password: 'Password',
+    pleaseEnterCredentials: 'Please enter username and password',
+    tokenExpired: 'Session expired, please login again',
     username: 'Username',
   },
   common: {
