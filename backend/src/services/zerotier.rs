@@ -1,5 +1,6 @@
 use crate::error::{AppError, Result};
 use crate::models::ZeroTierConfig;
+use axum::body::Bytes;
 use reqwest::{Client, Method, Response};
 use std::sync::Arc;
 
@@ -21,25 +22,21 @@ impl ZeroTierService {
         &self,
         endpoint: &str,
         method: Method,
-        body: Option<serde_json::Value>,
+        body: Bytes,
     ) -> Result<Response> {
-        let url = format!("{}/{}", self.config.address, endpoint);
+        let url = format!("{}{}", self.config.address, endpoint);
 
         let mut request = self
             .client
             .request(method, &url)
-            .header("X-ZT1-AUTH", &self.config.auth_token)
-            .header("Content-Type", "application/json");
+            .header("X-ZT1-AUTH", &self.config.auth_token);
 
-        if let Some(body) = body {
-            request = request.json(&body);
-        }
+        // Forward body
+        request = request.body(body);
 
-        let response = request
+        request
             .send()
             .await
-            .map_err(|e| AppError::ZeroTierError(format!("Failed to forward request: {}", e)))?;
-
-        Ok(response)
+            .map_err(|e| AppError::ZeroTierError(format!("Failed to forward request: {}", e)))
     }
 }
