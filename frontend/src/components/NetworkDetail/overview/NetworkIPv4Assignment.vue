@@ -49,7 +49,7 @@ const changeIPv4Assignment = (e: Event) => {
       <span class="text-xl font-bold">
         {{ t('network.ipv4Assignment.zt') }}
       </span>
-      <Switch :checked="networkData?.v4AssignMode?.zt" @update:model-value="(checked: boolean) =>
+      <Switch :model-value="networkData?.v4AssignMode?.zt" @update:model-value="(checked: boolean) =>
         changeIPv4Assignment({ target: { checked } } as any)" />
     </div>
   </div>

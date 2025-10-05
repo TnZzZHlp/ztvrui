@@ -55,7 +55,7 @@ const changeIPv6Assignment = (e: Event, type: string) => {
       <span class="text-xl font-bold">
         {{ t(`network.ipv6Assignment.${item}`) }}
       </span>
-      <Switch :checked="value"
+      <Switch :model-value="value"
         @update:model-value="(checked: boolean) => changeIPv6Assignment({ target: { checked } } as any, item)" />
     </div>
   </div>
