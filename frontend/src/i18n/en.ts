@@ -1,5 +1,8 @@
 const en = {
   auth: {
+    error: {
+      emptyFields: 'Username and password cannot be empty',
+    },
     forgotPassword: 'Forgot Password',
     login: 'Login',
     loginFailed: 'Login failed, please check username and password',
@@ -15,6 +18,7 @@ const en = {
     add: 'Add',
     cancel: 'Cancel',
     confirm: 'Confirm',
+    confirmAction: 'Please confirm this action',
     copied: 'Copied',
     copyFailed: 'Copy failed',
     return: 'Return',
@@ -25,6 +29,8 @@ const en = {
   network: {
     add: {
       default: 'Add Network',
+      error: 'Failed to add network',
+      success: 'Network added successfully',
     },
     creationTime: 'Creation Time',
     default: 'Network',
@@ -75,11 +81,13 @@ const en = {
       deleteSuccess: 'Member deleted successfully',
       error: 'Failed to get member list',
       id: 'Member ID',
+      modifyIP: 'Modify Member IP',
       unnamed: 'Unnamed Member',
     },
     multicastLimit: 'Multicast Limit',
     mtuTooLow: 'MTU too low, please set to 1280 or higher',
     name: 'Network Name',
+    needName: 'Network name cannot be empty',
     routes: 'Routes',
     rules: {
       default: 'Network Rules',

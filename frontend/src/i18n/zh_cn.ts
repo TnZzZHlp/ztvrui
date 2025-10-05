@@ -1,5 +1,8 @@
 const zh_cn = {
   auth: {
+    error: {
+      emptyFields: '用户名和密码不能为空',
+    },
     forgotPassword: '忘记密码',
     login: '登录',
     loginFailed: '登录失败，请检查用户名和密码',
@@ -15,6 +18,7 @@ const zh_cn = {
     add: '增加',
     cancel: '取消',
     confirm: '确认',
+    confirmAction: '请确认该操作',
     copied: '已复制',
     copyFailed: '复制失败',
     return: '返回',
@@ -25,6 +29,8 @@ const zh_cn = {
   network: {
     add: {
       default: '添加网络',
+      error: '添加网络失败',
+      success: '网络添加成功',
     },
     creationTime: '创建时间',
     default: '网络',
@@ -75,11 +81,13 @@ const zh_cn = {
       deleteSuccess: '成员删除成功',
       error: '获取成员列表失败',
       id: '成员 ID',
+      modifyIP: '修改成员 IP',
       unnamed: '未命名成员',
     },
     multicastLimit: '多播限制',
     mtuTooLow: 'MTU 过低, 请设置为 1280 或更高',
     name: '网络名称',
+    needName: '网络名称不能为空',
     routes: '路由',
     rules: {
       default: '网络规则',
