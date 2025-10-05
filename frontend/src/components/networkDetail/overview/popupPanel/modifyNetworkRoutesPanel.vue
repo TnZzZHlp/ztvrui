@@ -1,120 +1,123 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { networksData } from '@/components/networkDetail/networkDetailStorage'
+import { useNetworkDetailStore } from '@/stores/networkDetail'
 import _ from 'lodash'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
 import { eventBus } from '@/utils/eventBus'
 
+const networkDetailStore = useNetworkDetailStore()
+
 const { container, networkId } = defineProps({
-  container: HTMLDivElement,
-  networkId: String,
+    container: HTMLDivElement,
+    networkId: String,
 })
 const networkData = ref(
-  _.cloneDeep(networksData.value.find((data) => data.id === (networkId as string))),
+    _.cloneDeep(networkDetailStore.networksData.find((data) => data.id === (networkId as string))),
 )
 
 const close = ref(false)
 const { t } = useI18n()
 
 const handleClick = () => {
-  // Submit changes
-  createOrUpdateNetwork(networkData.value?.id as string, {
-    name: networkData.value?.name as string,
-    ...networkData.value,
-    routes: networkData.value?.routes,
-  })
-    .then(() => {
-      // Update the network data in the storage
-      const event = new CustomEvent('controllerNetworkInfoUpdate', {
-        detail: networkData.value?.id,
-      })
-      eventBus.dispatchEvent(event)
-      showSnackBar(t('common.updateSuccess'), 'success')
+    // Submit changes
+    createOrUpdateNetwork(networkData.value?.id as string, {
+        name: networkData.value?.name as string,
+        ...networkData.value,
+        routes: networkData.value?.routes,
     })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
-  closePopupPanel()
+        .then(() => {
+            // Update the network data in the storage
+            const event = new CustomEvent('controllerNetworkInfoUpdate', {
+                detail: networkData.value?.id,
+            })
+            eventBus.dispatchEvent(event)
+            showSnackBar(t('common.updateSuccess'), 'success')
+        })
+        .catch((err) => {
+            showSnackBar(t('common.updateFailed') + err, 'error')
+        })
+    closePopupPanel()
 }
 
 const closePopupPanel = () => {
-  close.value = true
-  setTimeout(() => {
-    container?.remove()
-  }, 300)
+    close.value = true
+    setTimeout(() => {
+        container?.remove()
+    }, 300)
 }
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 popup-panel"
-    :class="{ 'popup-panel-leave-active': close }">
-    <div class="bg-white rounded p-5 flex flex-col justify-between lg:w-1/3">
-      <!-- Routes -->
-      <div class="flex">
-        <span class="w-full">{{ t('network.default') }}</span>
-        <span class="w-full">{{ t('network.via.default') }}</span>
-        <span class="w-4"></span>
-      </div>
-      <div class="flex" v-for="(route, index) in networkData?.routes" :key="index">
-        <input type="text" :placeholder="t('network.default')" class="focus:outline-none border-b w-full mr-1"
-          name="default" v-model="route.target" autocomplete="off" />
-        <input type="text" :placeholder="t('network.via.notice')" class="focus:outline-none border-b w-full" name="via"
-          v-model="route.via" autocomplete="off" />
-        <img src="@/assets/icons/delete.svg" alt="delete IP assignment pool" class="w-4 cursor-pointer"
-          @click="networkData?.routes!.splice(index, 1)" />
-      </div>
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 popup-panel"
+        :class="{ 'popup-panel-leave-active': close }">
+        <div class="bg-white rounded p-5 flex flex-col justify-between lg:w-1/3">
+            <!-- Routes -->
+            <div class="flex">
+                <span class="w-full">{{ t('network.default') }}</span>
+                <span class="w-full">{{ t('network.via.default') }}</span>
+                <span class="w-4"></span>
+            </div>
+            <div class="flex" v-for="(route, index) in networkData?.routes" :key="index">
+                <input type="text" :placeholder="t('network.default')" class="focus:outline-none border-b w-full mr-1"
+                    name="default" v-model="route.target" autocomplete="off" />
+                <input type="text" :placeholder="t('network.via.notice')" class="focus:outline-none border-b w-full"
+                    name="via" v-model="route.via" autocomplete="off" />
+                <img src="@/assets/icons/delete.svg" alt="delete IP assignment pool" class="w-4 cursor-pointer"
+                    @click="networkData?.routes!.splice(index, 1)" />
+            </div>
 
-      <!-- Actions -->
-      <div class="flex justify-between mt-4">
-        <button class="mx-2 px-4 py-2 shadow-sm/20 rounded hover:bg-gray-200 transition-all active:bg-gray-300"
-          @click="closePopupPanel" type="button">
-          <b>{{ t('common.cancel') }}</b>
-        </button>
-        <button class="mx-2 px-4 py-2 shadow-sm/20 rounded hover:bg-gray-200 transition-all active:bg-gray-300" @click="
-          networkData?.routes?.push({
-            target: '',
-            via: '',
-          })
-          " type="button">
-          <b>{{ t('common.add') }}</b>
-        </button>
-        <button class="mx-2 px-4 py-2 shadow-sm/20 rounded hover:bg-gray-200 transition-all active:bg-gray-300"
-          @click="handleClick" type="submit">
-          <b>{{ t('common.confirm') }}</b>
-        </button>
-      </div>
+            <!-- Actions -->
+            <div class="flex justify-between mt-4">
+                <button class="mx-2 px-4 py-2 shadow-sm/20 rounded hover:bg-gray-200 transition-all active:bg-gray-300"
+                    @click="closePopupPanel" type="button">
+                    <b>{{ t('common.cancel') }}</b>
+                </button>
+                <button class="mx-2 px-4 py-2 shadow-sm/20 rounded hover:bg-gray-200 transition-all active:bg-gray-300"
+                    @click="
+                        networkData?.routes?.push({
+                            target: '',
+                            via: '',
+                        })
+                        " type="button">
+                    <b>{{ t('common.add') }}</b>
+                </button>
+                <button class="mx-2 px-4 py-2 shadow-sm/20 rounded hover:bg-gray-200 transition-all active:bg-gray-300"
+                    @click="handleClick" type="submit">
+                    <b>{{ t('common.confirm') }}</b>
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
 .popup-panel {
-  animation: fade-in 0.3s forwards;
+    animation: fade-in 0.3s forwards;
 }
 
 .popup-panel-leave-active {
-  animation: fade-out 0.3s forwards;
+    animation: fade-out 0.3s forwards;
 }
 
 @keyframes fade-out {
-  from {
-    opacity: 1;
-  }
+    from {
+        opacity: 1;
+    }
 
-  to {
-    opacity: 0;
-  }
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
+    from {
+        opacity: 0;
+    }
 
-  to {
-    opacity: 1;
-  }
+    to {
+        opacity: 1;
+    }
 }
 </style>

@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
-// 创建 axios 实例
+// Create an Axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: '/',
   timeout: 30000,
@@ -41,15 +41,15 @@ apiClient.interceptors.response.use(
 
       const authStore = useAuthStore()
 
-      // 尝试刷新 token
+      // Try refreshing the token
       if (authStore.token) {
         try {
           await authStore.refresh()
-          // 使用新 token 重试原始请求
+          // Retry the original request with a new token.
           originalRequest.headers.Authorization = `Bearer ${authStore.token}`
           return apiClient(originalRequest)
         } catch (refreshError) {
-          // 刷新失败，清除 token 并跳转到登录页
+          // Refresh failed, clear token and redirect to login page.
           authStore.clearAuth()
           return Promise.reject(refreshError)
         }

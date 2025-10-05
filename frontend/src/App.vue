@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import Sonner from './components/ui/sonner/Sonner.vue';
+import 'vue-sonner/style.css'
 </script>
 
 <template>
-  <RouterView v-slot="{ Component }">
-    <template v-if="Component">
-      <Transition mode="out-in" name="fade">
-        <KeepAlive>
-          <component :is="Component"></component>
-        </KeepAlive>
-      </Transition>
-    </template>
-  </RouterView>
+  <router-view v-slot="{ Component }">
+    <transition name="fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
+
+  <Sonner position="top-center" :rich-colors="true" />
 </template>
 
 <style>
@@ -24,6 +24,7 @@ import { RouterView } from 'vue-router'
 .fade-leave-to {
   opacity: 0;
 }
+
 .fade-enter-to,
 .fade-leave-from {
   opacity: 1;

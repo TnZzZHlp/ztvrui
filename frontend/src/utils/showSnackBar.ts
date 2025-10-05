@@ -1,30 +1,22 @@
-import { createApp } from 'vue'
-import snackBar from '../components/snackBar.vue'
-
-let currentSnackBar: HTMLDivElement | null = null
-let timer: ReturnType<typeof setTimeout> | null = null
+import { toast } from 'vue-sonner'
 
 export function showSnackBar(
   message: string,
   type: 'info' | 'error' | 'warn' | 'success' = 'info',
 ) {
-  if (currentSnackBar) {
-    currentSnackBar.remove()
+  switch (type) {
+    case 'success':
+      toast.success(message)
+      break
+    case 'error':
+      toast.error(message)
+      break
+    case 'warn':
+      toast.warning(message)
+      break
+    case 'info':
+    default:
+      toast.info(message)
+      break
   }
-
-  if (timer) {
-    clearTimeout(timer)
-  }
-
-  const snackBarNode = document.createElement('div')
-  document.body.appendChild(snackBarNode)
-  const snackBarInstance = createApp(snackBar, { message, type })
-  snackBarInstance.mount(snackBarNode)
-
-  currentSnackBar = snackBarNode
-
-  timer = setTimeout(() => {
-    document.body.removeChild(snackBarNode)
-    currentSnackBar = null
-  }, 3000) // Automatically remove after 3 seconds
 }

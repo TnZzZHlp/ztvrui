@@ -46,6 +46,7 @@ router.beforeEach(async (to, from, next) => {
   } else {
     next()
   }
+  console.debug('Navigation to:', to.fullPath)
 })
 
 export default router

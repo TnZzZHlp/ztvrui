@@ -1,21 +1,11 @@
 <script setup lang="ts">
 import { login } from '@/api/manage/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
-import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
 
 const { t } = useI18n()
 const router = useRouter()
-const authStore = useAuthStore()
-
-// Check if user is already logged in
-onMounted(() => {
-  if (authStore.isAuthenticated) {
-    router.push({ name: 'networks' })
-  }
-})
 
 const Login = async (e: Event) => {
   // Prevent the default form submission
