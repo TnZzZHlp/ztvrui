@@ -27,6 +27,7 @@ const zh_cn = {
     submit: '提交',
     updateFailed: '更新失败',
     updateSuccess: '更新成功',
+    noData: '暂无数据',
   },
   network: {
     add: {

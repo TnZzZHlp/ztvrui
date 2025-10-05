@@ -141,12 +141,8 @@ onBeforeMount(() => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{{ t('common.cancel') }}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" @click="
-              () => {
-                networkToDelete = network.id!
-                confirmDeleteNetwork()
-              }
-            ">
+            <AlertDialogAction @click="() => { networkToDelete = network.id!; confirmDeleteNetwork(); }"
+              class="bg-red-500 hover:bg-red-600">
               {{ t('common.confirm') }}
             </AlertDialogAction>
           </AlertDialogFooter>

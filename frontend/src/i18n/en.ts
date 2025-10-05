@@ -27,6 +27,7 @@ const en = {
     submit: 'Submit',
     updateFailed: 'Update failed',
     updateSuccess: 'Update successful',
+    noData: 'No data available',
   },
   network: {
     add: {

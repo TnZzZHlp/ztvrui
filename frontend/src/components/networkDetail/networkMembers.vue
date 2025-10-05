@@ -163,7 +163,7 @@ onBeforeMount(() => {
 
             <!-- Authorized -->
             <TableCell class="text-center">
-              <Switch :checked="member.authorized" @update:model-value="
+              <Switch :model-value="member.authorized" @update:model-value="
                 (checked: boolean) => {
                   members[index].authorized = checked
                   changeMemberSettings(members[index])
@@ -173,7 +173,7 @@ onBeforeMount(() => {
 
             <!-- Auto Assign IPs -->
             <TableCell class="text-center">
-              <Switch :checked="!member.noAutoAssignIps" @update:checked="
+              <Switch :model-value="!member.noAutoAssignIps" @update:model-value="
                 (checked: boolean) => {
                   members[index].noAutoAssignIps = !checked
                   changeMemberSettings(members[index])
@@ -183,7 +183,7 @@ onBeforeMount(() => {
 
             <!-- Active Bridge -->
             <TableCell class="text-center">
-              <Switch :checked="member.activeBridge" @update:checked="
+              <Switch :model-value="member.activeBridge" @update:model-value="
                 (checked: boolean) => {
                   members[index].activeBridge = checked
                   changeMemberSettings(members[index])

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import NetworkNameIdComponent from './overview/networkNameId.vue'
+import NetworkNameIDComponent from './overview/networkNameID.vue'
 import NetworkCreationTimeComponent from './overview/networkCreateTime.vue'
 import NetworkTypeComponent from './overview/networkType.vue'
 import NetworkMTUComponent from './overview/networkOther.vue'
@@ -13,7 +13,7 @@ import NetworkRulesComponent from './overview/networkRules.vue'
 
 <template>
   <div class="p-4 sm:grid-cols-1 grid lg:grid-cols-4 gap-4 w-full">
-    <NetworkNameIdComponent />
+    <NetworkNameIDComponent />
     <NetworkCreationTimeComponent />
     <NetworkTypeComponent />
     <NetworkMTUComponent />
