@@ -36,6 +36,16 @@ jobs:
                   cd frontend
                   pnpm install --no-frozen-lockfile
 
+            - name: Lint with ESLint
+              run: |
+                  cd frontend
+                  pnpm run lint
+
+            - name: Type check with TypeScript
+              run: |
+                  cd frontend
+                  pnpm run type-check
+
             - name: Build Frontend
               run: |
                   cd frontend
