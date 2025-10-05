@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import NetworksComponent from '@/components/networks/NetworkList.vue'
-import AddNetworkDialog from '@/components/networks/AddNetworkDialog.vue'
-import ModifyInfoDialog from '@/components/networks/ModifyInfoDialog.vue'
+import NetworksComponent from '@/components/Networks/NetworkList.vue'
+import AddNetworkDialog from '@/components/Networks/AddNetworkDialog.vue'
+import ModifyInfoDialog from '@/components/Networks/ModifyInfoDialog.vue'
 import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
