@@ -123,7 +123,7 @@ const changeMulticastLimit = (value: number) => {
     </NumberField>
 
     <p class="text-gray-500 mt-2">{{ t('network.enableBroadcast') }}</p>
-    <Switch :checked="networkData?.enableBroadcast"
+    <Switch :model-value="networkData?.enableBroadcast"
       @update:model-value="(checked: boolean) => changeEnableBroadcast({ target: { checked } } as any)" />
   </div>
 </template>

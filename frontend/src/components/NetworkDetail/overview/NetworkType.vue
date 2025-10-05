@@ -49,7 +49,7 @@ const changeNetworkType = (e: Event) => {
       <span class="text-3xl font-bold">
         {{ networkData?.private ? t('network.type.private') : t('network.type.public') }}
       </span>
-      <Switch :checked="networkData?.private"
+      <Switch :model-value="networkData?.private"
         @update:model-value="(checked: boolean) => changeNetworkType({ target: { checked } } as any)" />
     </div>
   </div>
