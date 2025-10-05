@@ -79,9 +79,6 @@ jobs:
                   toolchain: stable
                   target: ${{ matrix.target }}
 
-            - name: Init Submodules
-              run: git submodule update --init --recursive
-
             - name: Build Frontend
               run: |
                   cd frontend
