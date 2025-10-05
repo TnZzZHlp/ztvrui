@@ -57,7 +57,7 @@ const zh_cn = {
     dnsDomain: 'DNS 域名',
     enableBroadcast: '启用广播',
     enter: '进入网络',
-    id: '网络Id',
+    id: '网络 ID',
     ip: 'IP 地址',
     ipAssignmentPools: {
       default: 'IP 分配池',

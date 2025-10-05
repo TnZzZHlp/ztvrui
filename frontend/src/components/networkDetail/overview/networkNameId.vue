@@ -21,12 +21,13 @@ const networkData = computed(() => {
 const qrCodeDataUrl = ref<string>('')
 const showQRCode = ref(false)
 
-// 生成二维码
+// Generate QR code
 const generateQRCode = async () => {
   if (!networkData.value?.id) return
 
   try {
-    const dataUrl = await QRCode.toDataURL(networkData.value.id, {
+    const zerotierUri = `https://joinzt.com/addnetwork?nwid=${networkData.value.id}&v=1`
+    const dataUrl = await QRCode.toDataURL(zerotierUri, {
       width: 200,
       margin: 2,
       color: {
@@ -42,7 +43,7 @@ const generateQRCode = async () => {
   }
 }
 
-// 监听 networkData 变化，自动生成二维码
+// Monitor networkData changes and automatically generate a QR code.
 watch(
   () => networkData.value?.id,
   (newId) => {

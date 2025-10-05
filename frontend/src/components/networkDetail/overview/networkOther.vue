@@ -2,9 +2,10 @@
 import { useRoute } from 'vue-router'
 import { useNetworkDetailStore } from '@/stores/networkDetail'
 import { Switch } from '@/components/ui/switch'
+import { NumberField, NumberFieldContent, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement } from '@/components/ui/number-field'
 
 const networkDetailStore = useNetworkDetailStore()
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
 import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
@@ -16,6 +17,17 @@ const { t } = useI18n()
 const networkData = computed(() => {
   return networkDetailStore.networksData.find((data) => data.id === (route.params.networkId as string))
 })
+
+const mtu = ref<number>(1280)
+const multicastLimit = ref<number>(0)
+
+// 监听 networkData 变化，同步到本地状态
+watch(networkData, (newData) => {
+  if (newData) {
+    mtu.value = newData.mtu || 1280
+    multicastLimit.value = newData.multicastLimit || 0
+  }
+}, { immediate: true })
 
 const changeEnableBroadcast = (e: Event) => {
   const data = networkData.value
@@ -37,20 +49,20 @@ const changeEnableBroadcast = (e: Event) => {
     })
 }
 
-const changeMTU = (e: Event) => {
+const changeMTU = (value: number) => {
   const data = networkData.value
   if (!data) return
 
-  const mtu = parseInt((e.target as HTMLInputElement).value, 10)
+  mtu.value = value
 
-  if (mtu < 1280) {
+  if (value < 1280) {
     showSnackBar(t('network.mtuTooLow'), 'error')
     return
   }
 
   const payload: ControllerNetworkInfo = {
     ...data,
-    mtu,
+    mtu: value,
   }
 
   createOrUpdateNetwork(data.id as string, payload)
@@ -62,20 +74,20 @@ const changeMTU = (e: Event) => {
     })
 }
 
-const changeMulticastLimit = (e: Event) => {
+const changeMulticastLimit = (value: number) => {
   const data = networkData.value
   if (!data) return
 
-  const multicastLimit = parseInt((e.target as HTMLInputElement).value, 10)
+  multicastLimit.value = value
 
-  if (multicastLimit < 0) {
+  if (value < 0) {
     showSnackBar(t('network.multicastLimitInvalid'), 'error')
     return
   }
 
   const payload: ControllerNetworkInfo = {
     ...data,
-    multicastLimit,
+    multicastLimit: value,
   }
 
   createOrUpdateNetwork(data.id as string, payload)
@@ -92,12 +104,23 @@ const changeMulticastLimit = (e: Event) => {
   <!-- Network MTU MulticastLimit enableBroadcast -->
   <div v-if="networkData" class="p-4 shadow bg-white rounded-2lg">
     <p class="text-gray-500">MTU</p>
-    <input class="text-3xl font-bold focus:outline-none border-b-1 w-full" type="number" min="1280"
-      v-model="networkData!.mtu" autocomplete="off" @change="changeMTU" />
+    <NumberField v-model="mtu" :min="1280" :format-options="{ useGrouping: false }" @update:model-value="changeMTU">
+      <NumberFieldContent>
+        <NumberFieldDecrement />
+        <NumberFieldInput class="font-bold" />
+        <NumberFieldIncrement />
+      </NumberFieldContent>
+    </NumberField>
 
     <p class="text-gray-500 mt-2">{{ t('network.multicastLimit') }}</p>
-    <input class="text-ms font-bold focus:outline-none border-b-1 w-full" type="number" min="0"
-      v-model="networkData!.multicastLimit" autocomplete="off" @change="changeMulticastLimit" />
+    <NumberField v-model="multicastLimit" :min="0" :format-options="{ useGrouping: false }"
+      @update:model-value="changeMulticastLimit">
+      <NumberFieldContent>
+        <NumberFieldDecrement />
+        <NumberFieldInput class="text-ms font-bold" />
+        <NumberFieldIncrement />
+      </NumberFieldContent>
+    </NumberField>
 
     <p class="text-gray-500 mt-2">{{ t('network.enableBroadcast') }}</p>
     <Switch :checked="networkData?.enableBroadcast"
