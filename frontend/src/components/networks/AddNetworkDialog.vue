@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '../ui/input'
 
 const { t } = useI18n()
 
@@ -53,14 +54,14 @@ const handleOpenChange = (newOpen: boolean) => {
     <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ t('network.add.default') }}</DialogTitle>
-        <DialogDescription>
-          {{ t('network.name') }}
-        </DialogDescription>
       </DialogHeader>
       <form @submit.prevent="handleSubmit">
         <div class="grid gap-4 py-4">
-          <input v-model="networkName" type="text" :placeholder="t('network.name')" class="border p-3 rounded"
-            autocomplete="off" />
+          <label for="networkName" class="text-sm font-medium">
+            {{ t('network.name') }}
+          </label>
+          <Input id="networkName" v-model="networkName" type="text" :placeholder="t('network.name')"
+            class="border p-3 rounded" autocomplete="off" />
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" @click="open = false">

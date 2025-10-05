@@ -29,7 +29,7 @@ const showModifyDialog = ref(false)
     </header>
 
     <!-- Main Content -->
-    <main class="xl:px-[30%] h-full flex items-center flex-col justify-start p-极4">
+    <main class="xl:px-[30%] h-full flex items-center flex-col justify-start p-2">
       <NetworksComponent />
     </main>
 

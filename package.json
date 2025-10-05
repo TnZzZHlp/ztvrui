@@ -1,0 +1,5 @@
+{
+	"devDependencies": {
+		"@types/qrcode": "^1.5.5"
+	}
+}

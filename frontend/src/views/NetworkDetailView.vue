@@ -56,7 +56,7 @@ onMounted(() => {
       <div class="flex h-screen w-full">
         <Sidebar collapsible="icon">
           <SidebarHeader>
-            <div class="flex items-center gap-2 px-2 py-2">
+            <div class="flex items-center gap-2 p-2">
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">ZTVRUI</span>
               </div>
@@ -93,7 +93,7 @@ onMounted(() => {
           </header>
 
           <!-- Main Content -->
-          <main class="flex-1 overflow-auto p-4">
+          <main class="flex-1 overflow-auto p-1">
             <router-view v-slot="{ Component }">
               <transition name="fade" mode="out-in">
                 <component :is="Component" />

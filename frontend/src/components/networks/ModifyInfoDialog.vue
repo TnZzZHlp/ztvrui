@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { editProfile } from '@/api/manage/editProfile'
 import { showSnackBar } from '@/utils/showSnackBar'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -54,9 +55,6 @@ const handleOpenChange = (newOpen: boolean) => {
     <DialogContent class="sm:max-w-[425px]">
       <DialogHeader>
         <DialogTitle>{{ t('auth.modifyInfo') }}</DialogTitle>
-        <DialogDescription>
-          {{ t('auth.modifyInfo') }}
-        </DialogDescription>
       </DialogHeader>
       <form @submit.prevent="handleSubmit">
         <div class="grid gap-4 py-4">
@@ -64,14 +62,14 @@ const handleOpenChange = (newOpen: boolean) => {
             <label for="username" class="text-sm font-medium">
               {{ t('auth.username') }}
             </label>
-            <input id="username" v-model="username" type="text" :placeholder="t('auth.username')"
+            <Input id="username" v-model="username" type="text" :placeholder="t('auth.username')"
               class="border p-3 rounded" autocomplete="off" />
           </div>
           <div class="flex flex-col gap-2">
             <label for="password" class="text-sm font-medium">
               {{ t('auth.password') }}
             </label>
-            <input id="password" v-model="password" type="password" :placeholder="t('auth.password')"
+            <Input id="password" v-model="password" type="password" :placeholder="t('auth.password')"
               class="border p-3 rounded" autocomplete="off" />
           </div>
         </div>

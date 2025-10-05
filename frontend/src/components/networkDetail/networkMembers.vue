@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {
-    createOrUpdateNetworkMember,
-    getNetworkMemberById,
-    listNetworkMemberIds,
-    deleteNetworkMember,
+  createOrUpdateNetworkMember,
+  getNetworkMemberById,
+  listNetworkMemberIds,
+  deleteNetworkMember,
 } from '@/api/zerotier/controller'
 import type { ControllerNetworkMemberInfo } from '@/types/zerotier/controller'
 import { showSnackBar } from '@/utils/showSnackBar'
@@ -11,14 +11,15 @@ import { computed, onBeforeMount, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { copyToClipboard } from '@/utils/copyToClipboard'
-import yesIcon from '@/assets/icons/yes.svg'
-import noIcon from '@/assets/icons/no.svg'
 import settingIcon from '@/assets/icons/setting.svg'
 import deleteIcon from '@/assets/icons/delete.svg'
 import ModifyMemberIPDialog from './member/ModifyMemberIPDialog.vue'
 import { eventBus } from '@/utils/eventBus'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Switch } from '@/components/ui/switch'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -27,15 +28,15 @@ const members = ref<ControllerNetworkMemberInfo[]>([])
 
 const searchKeyword = ref('')
 const shouldShowMember = computed(() => {
-    return (member: ControllerNetworkMemberInfo) => {
-        if (!searchKeyword.value) return true
-        const keyword = searchKeyword.value.toLowerCase()
-        return (
-            member.name.toLowerCase().includes(keyword) ||
-            member.id.toLowerCase().includes(keyword) ||
-            member.ipAssignments.some((ip) => ip.toLowerCase().includes(keyword))
-        )
-    }
+  return (member: ControllerNetworkMemberInfo) => {
+    if (!searchKeyword.value) return true
+    const keyword = searchKeyword.value.toLowerCase()
+    return (
+      member.name.toLowerCase().includes(keyword) ||
+      member.id.toLowerCase().includes(keyword) ||
+      member.ipAssignments.some((ip) => ip.toLowerCase().includes(keyword))
+    )
+  }
 })
 
 // Confirm dialog state
@@ -44,9 +45,9 @@ const confirmMessage = ref('')
 const confirmAction = ref<() => void>(() => { })
 
 const openConfirmDialog = (message: string, action: () => void) => {
-    confirmMessage.value = message
-    confirmAction.value = action
-    showConfirmDialog.value = true
+  confirmMessage.value = message
+  confirmAction.value = action
+  showConfirmDialog.value = true
 }
 
 // Modify member IP dialog state
@@ -54,161 +55,179 @@ const showModifyIPDialog = ref(false)
 const selectedMember = ref<ControllerNetworkMemberInfo | null>(null)
 
 const openModifyIPDialog = (member: ControllerNetworkMemberInfo) => {
-    selectedMember.value = member
-    showModifyIPDialog.value = true
+  selectedMember.value = member
+  showModifyIPDialog.value = true
 }
 
 const changeMemberSettings = (member: ControllerNetworkMemberInfo) => {
-    // Function to change member settings
-    const networkId = route.params.networkId as string
+  // Function to change member settings
+  const networkId = route.params.networkId as string
 
-    createOrUpdateNetworkMember(networkId, member.id, member)
-        .then(() => {
-            showSnackBar(t('common.updateSuccess'), 'success')
-        })
-        .catch((err) => {
-            showSnackBar(t('common.updateFailed') + err, 'error')
-        })
+  createOrUpdateNetworkMember(networkId, member.id, member)
+    .then(() => {
+      showSnackBar(t('common.updateSuccess'), 'success')
+    })
+    .catch((err) => {
+      showSnackBar(t('common.updateFailed') + err, 'error')
+    })
 }
 
 const fetchMembers = () => {
-    const networkId = route.params.networkId as string
-    listNetworkMemberIds(networkId)
-        .then((memberIds) => {
-            Object.keys(memberIds).forEach((memberId) => {
-                getNetworkMemberById(networkId, memberId).then((member) => {
-                    if (member) {
-                        if (!member.name) {
-                            member.name = t('network.member.unnamed') // Default name if not set
-                        }
+  const networkId = route.params.networkId as string
+  listNetworkMemberIds(networkId)
+    .then((memberIds) => {
+      Object.keys(memberIds).forEach((memberId) => {
+        getNetworkMemberById(networkId, memberId).then((member) => {
+          if (member) {
+            if (!member.name) {
+              member.name = t('network.member.unnamed') // Default name if not set
+            }
 
-                        const index = members.value.findIndex((m) => m.id === member.id)
-                        if (index !== -1) {
-                            // Update existing member
-                            members.value[index] = member
-                        } else {
-                            // Add new member
-                            members.value.push(member)
-                        }
-                    } else {
-                        throw new Error(`Failed to get member with ID ${memberId}`)
-                    }
-                })
-            })
+            const index = members.value.findIndex((m) => m.id === member.id)
+            if (index !== -1) {
+              // Update existing member
+              members.value[index] = member
+            } else {
+              // Add new member
+              members.value.push(member)
+            }
+          } else {
+            throw new Error(`Failed to get member with ID ${memberId}`)
+          }
         })
-        .catch((error) => {
-            showSnackBar(t('network.member.error') + error, 'error')
-        })
+      })
+    })
+    .catch((error) => {
+      showSnackBar(t('network.member.error') + error, 'error')
+    })
 }
 
 onBeforeMount(() => {
-    // Get network member ids
-    fetchMembers()
-    eventBus.addEventListener('networkMemberChanged', fetchMembers)
+  // Get network member ids
+  fetchMembers()
+  eventBus.addEventListener('networkMemberChanged', fetchMembers)
 })
 </script>
 
 <template>
-    <div class="flex flex-col gap-4 p-4">
-        <div class="bg-gray-200 flex items-center justify-between p-2 rounded-lg">
-            <input class="w-full h-full focus:outline-none" type="text" v-model="searchKeyword" />
-            <img src="@/assets/icons/search.svg" alt="search" class="w-5 h-5" />
-        </div>
-
-        <!-- Member List -->
-        <ol v-if="members.length !== 0" class="text-center">
-            <li class="rounded-lg shadow min-h-30 mb-2" v-for="(member, index) in members" :key="member.id"
-                v-show="shouldShowMember(member)">
-                <!-- Member Info -->
-                <div class="flex justify-between bg-gray-200 p-2 rounded-t-lg">
-                    <input class="font-bold text-xl focus:outline-none border-b-1 border-gray-300" :width="200"
-                        type="text" placeholder="Member Name" v-model="members[index].name" autocomplete="off"
-                        @change="changeMemberSettings(members[index])" />
-                    <div class="flex items-center gap-3">
-                        <!-- Edit Button -->
-                        <Button variant="secondary" size="icon" @click="openModifyIPDialog(member)">
-                            <img :src="settingIcon" alt="editMember" class="w-5 h-5" />
-                        </Button>
-
-                        <!-- Delete Button -->
-                        <Button variant="destructive" size="icon" @click="
-                            openConfirmDialog(
-                                t('network.member.deleteConfirm'),
-                                () => {
-                                    deleteNetworkMember(member.nwid, member.id)
-                                        .then(() => {
-                                            showSnackBar(t('network.member.deleteSuccess'), 'success')
-                                            members.splice(index, 1) // Remove member from list
-                                        })
-                                        .catch((err) => {
-                                            showSnackBar(t('network.member.deleteFailed') + err, 'error')
-                                        })
-                                },
-                            )
-                            ">
-                            <img :src="deleteIcon" alt="editMember" class="filter brightness-0 invert w-3 h-3" />
-                        </Button>
-
-                        <!-- Authorization Button -->
-                        <Button :variant="member.authorized ? 'default' : 'destructive'" size="icon" @click="
-                            () => {
-                                members[index].authorized = !members[index].authorized
-                                changeMemberSettings(members[index])
-                            }
-                        ">
-                            <img :src="member.authorized ? yesIcon : noIcon" alt="changeAuthorization"
-                                class="filter brightness-0 invert w-3 h-3" />
-                        </Button>
-                    </div>
-                </div>
-
-                <!-- Device ID -->
-                <div class="border-b-1 border-gray-300 flex items-center justify-between p-2">
-                    <span class="font-bold">{{ t('network.member.id') }}</span>
-                    <Button variant="outline" size="sm" @click="copyToClipboard(member.id)">
-                        {{ member.id }}
-                    </Button>
-                </div>
-
-                <!-- Device IP -->
-                <div class="border-b-1 border-gray-300 flex items-center justify-between p-2">
-                    <span class="font-bold">{{ t('network.ip') }}</span>
-                    <div>
-                        <Button variant="outline" size="sm" class="mr-1" v-for="ip in member.ipAssignments" :key="ip"
-                            @click="copyToClipboard(ip)">
-                            {{ ip }}
-                        </Button>
-                    </div>
-                </div>
-                <div class="flex items-center justify-evenly h-10">
-                    <Button :variant="!member.noAutoAssignIps ? 'default' : 'destructive'" size="sm" @click="
-                        () => {
-                            member.noAutoAssignIps = !member.noAutoAssignIps
-                            changeMemberSettings(member)
-                        }
-                    ">
-                        {{ t('network.member.autoAssignIps') }}
-                        <img :src="!member.noAutoAssignIps ? yesIcon : noIcon"
-                            class="ml-1 w-4 h-4 inline-block filter brightness-0 invert" />
-                    </Button>
-                    <Button :variant="member.activeBridge ? 'default' : 'destructive'" size="sm" @click="
-                        () => {
-                            member.activeBridge = !member.activeBridge
-                            changeMemberSettings(member)
-                        }
-                    ">
-                        {{ t('network.member.activeBridge') }}
-                        <img :src="member.activeBridge ? yesIcon : noIcon"
-                            class="ml-1 w-4 h-4 inline-block filter brightness-0 invert" />
-                    </Button>
-                </div>
-            </li>
-        </ol>
-
-        <!-- Dialogs -->
-        <ConfirmDialog :open="showConfirmDialog" :message="confirmMessage" :onConfirm="confirmAction" type="warn"
-            @update:open="showConfirmDialog = $event" />
-        <ModifyMemberIPDialog :open="showModifyIPDialog" :member-info="selectedMember"
-            @update:open="showModifyIPDialog = $event" />
+  <div class="flex flex-col gap-4 p-4">
+    <!-- Search Bar -->
+    <div class="flex items-center gap-2">
+      <Input v-model="searchKeyword" :placeholder="t('common.search')" class="flex-1" />
     </div>
+
+    <!-- Member Table -->
+    <div class="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-[200px]">{{ t('network.member.name') }}</TableHead>
+            <TableHead>{{ t('network.member.id') }}</TableHead>
+            <TableHead>{{ t('network.ip') }}</TableHead>
+            <TableHead class="text-center">{{ t('network.member.authorized') }}</TableHead>
+            <TableHead class="text-center">{{ t('network.member.autoAssignIps') }}</TableHead>
+            <TableHead class="text-center">{{ t('network.member.activeBridge') }}</TableHead>
+            <TableHead class="text-center w-[120px]">{{ t('common.actions') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="members.length === 0">
+            <TableCell :colspan="7" class="h-24 text-center">
+              {{ t('network.member.noMembers') }}
+            </TableCell>
+          </TableRow>
+          <TableRow v-for="(member, index) in members" :key="member.id" v-show="shouldShowMember(member)">
+            <!-- Name -->
+            <TableCell>
+              <Input v-model="members[index].name" :placeholder="t('network.member.unnamed')" class="h-8"
+                @change="changeMemberSettings(members[index])" />
+            </TableCell>
+
+            <!-- Member ID -->
+            <TableCell>
+              <Button variant="ghost" size="sm" @click="copyToClipboard(member.id)">
+                {{ member.id }}
+              </Button>
+            </TableCell>
+
+            <!-- IP Addresses -->
+            <TableCell>
+              <div class="flex flex-wrap gap-1">
+                <Button v-for="ip in member.ipAssignments" :key="ip" variant="outline" size="sm"
+                  @click="copyToClipboard(ip)">
+                  {{ ip }}
+                </Button>
+                <span v-if="member.ipAssignments.length === 0" class="text-sm text-muted-foreground">-</span>
+              </div>
+            </TableCell>
+
+            <!-- Authorized -->
+            <TableCell class="text-center">
+              <Switch :checked="member.authorized" @update:model-value="
+                (checked: boolean) => {
+                  members[index].authorized = checked
+                  changeMemberSettings(members[index])
+                }
+              " />
+            </TableCell>
+
+            <!-- Auto Assign IPs -->
+            <TableCell class="text-center">
+              <Switch :checked="!member.noAutoAssignIps" @update:checked="
+                (checked: boolean) => {
+                  members[index].noAutoAssignIps = !checked
+                  changeMemberSettings(members[index])
+                }
+              " />
+            </TableCell>
+
+            <!-- Active Bridge -->
+            <TableCell class="text-center">
+              <Switch :checked="member.activeBridge" @update:checked="
+                (checked: boolean) => {
+                  members[index].activeBridge = checked
+                  changeMemberSettings(members[index])
+                }
+              " />
+            </TableCell>
+
+            <!-- Actions -->
+            <TableCell class="text-center">
+              <div class="flex items-center justify-center gap-1">
+                <!-- Edit Button -->
+                <Button variant="ghost" size="icon" @click="openModifyIPDialog(member)">
+                  <img :src="settingIcon" alt="editMember" class="w-4 h-4" />
+                </Button>
+
+                <!-- Delete Button -->
+                <Button variant="ghost" size="icon" @click="
+                  openConfirmDialog(
+                    t('network.member.deleteConfirm'),
+                    () => {
+                      deleteNetworkMember(member.nwid, member.id)
+                        .then(() => {
+                          showSnackBar(t('network.member.deleteSuccess'), 'success')
+                          members.splice(index, 1)
+                        })
+                        .catch((err) => {
+                          showSnackBar(t('network.member.deleteFailed') + err, 'error')
+                        })
+                    },
+                  )
+                  ">
+                  <img :src="deleteIcon" alt="deleteMember" class="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- Dialogs -->
+    <ConfirmDialog :open="showConfirmDialog" :message="confirmMessage" :onConfirm="confirmAction" type="warn"
+      @update:open="showConfirmDialog = $event" />
+    <ModifyMemberIPDialog :open="showModifyIPDialog" :member-info="selectedMember"
+      @update:open="showModifyIPDialog = $event" />
+  </div>
 </template>

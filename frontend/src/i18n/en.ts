@@ -15,6 +15,7 @@ const en = {
     username: 'Username',
   },
   common: {
+    actions: 'Actions',
     add: 'Add',
     cancel: 'Cancel',
     confirm: 'Confirm',
@@ -22,6 +23,7 @@ const en = {
     copied: 'Copied',
     copyFailed: 'Copy failed',
     return: 'Return',
+    search: 'Search',
     submit: 'Submit',
     updateFailed: 'Update failed',
     updateSuccess: 'Update successful',
@@ -75,6 +77,7 @@ const en = {
     },
     member: {
       activeBridge: 'Allow Bridging',
+      authorized: 'Authorized',
       autoAssignIps: 'Auto-assign IPs',
       deleteConfirm: 'Confirm delete member? This operation cannot be recovered',
       deleteFailed: 'Member deletion failed',
@@ -82,6 +85,8 @@ const en = {
       error: 'Failed to get member list',
       id: 'Member ID',
       modifyIP: 'Modify Member IP',
+      name: 'Name',
+      noMembers: 'No members yet',
       unnamed: 'Unnamed Member',
     },
     multicastLimit: 'Multicast Limit',
@@ -93,6 +98,9 @@ const en = {
       default: 'Network Rules',
       warn: 'Network rules will be converted to ZeroTier rule format after being saved in browser. Once browser cache is cleared, the original text will be lost. Please remember to backup',
     },
+    showQRCode: 'Show QR Code',
+    hideQRCode: 'Hide QR Code',
+    scanToJoin: 'Scan QR Code to Join Network',
     type: {
       default: 'Network Type',
       private: 'Private Network',

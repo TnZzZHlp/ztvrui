@@ -15,6 +15,7 @@ const zh_cn = {
     username: '用户名',
   },
   common: {
+    actions: '操作',
     add: '增加',
     cancel: '取消',
     confirm: '确认',
@@ -22,6 +23,7 @@ const zh_cn = {
     copied: '已复制',
     copyFailed: '复制失败',
     return: '返回',
+    search: '搜索',
     submit: '提交',
     updateFailed: '更新失败',
     updateSuccess: '更新成功',
@@ -75,6 +77,7 @@ const zh_cn = {
     },
     member: {
       activeBridge: '允许桥接',
+      authorized: '已授权',
       autoAssignIps: '自动分配 IP',
       deleteConfirm: '确认删除成员？该操作无法恢复',
       deleteFailed: '成员删除失败',
@@ -82,6 +85,8 @@ const zh_cn = {
       error: '获取成员列表失败',
       id: '成员 ID',
       modifyIP: '修改成员 IP',
+      name: '名称',
+      noMembers: '暂无成员',
       unnamed: '未命名成员',
     },
     multicastLimit: '多播限制',
@@ -93,6 +98,9 @@ const zh_cn = {
       default: '网络规则',
       warn: '网络规则将会在保存在浏览器中后转换成 ZeroTier 的规则格式，一旦清除浏览器缓存原文将会丢失，请注意备份',
     },
+    showQRCode: '显示二维码',
+    hideQRCode: '隐藏二维码',
+    scanToJoin: '扫描二维码加入网络',
     type: {
       default: '网络类型',
       private: '私有网络',
