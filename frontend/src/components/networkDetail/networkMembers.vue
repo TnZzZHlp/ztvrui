@@ -139,7 +139,7 @@ onBeforeMount(() => {
           <TableRow v-for="(member, index) in members" :key="member.id" v-show="shouldShowMember(member)">
             <!-- Name -->
             <TableCell>
-              <Input v-model="members[index].name" :placeholder="t('network.member.unnamed')" class="h-8"
+              <Input v-model="members[index].name" :placeholder="t('network.member.unnamed')" class="h-8 min-w-[120px]"
                 @change="changeMemberSettings(members[index])" />
             </TableCell>
 

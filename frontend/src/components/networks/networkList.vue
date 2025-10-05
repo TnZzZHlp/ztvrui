@@ -117,7 +117,7 @@ onBeforeMount(() => {
       </div>
 
       <!-- QR Code Display -->
-      <div v-if="showQRCodeMap.get(network.id!) && qrCodeMap.get(network.id!)" class="mt-4 flex justify-center">
+      <div v-if="showQRCodeMap.get(network.id!) && qrCodeMap.get(network.id!)" class="my-4 flex justify-center">
         <div class="p-4 bg-white border border-gray-300 rounded-lg shadow-sm">
           <img :src="qrCodeMap.get(network.id!)" :alt="'QR Code for ' + network.id" class="w-50 h-50" />
           <p class="text-center text-sm text-gray-500 mt-2">{{ t('network.scanToJoin') }}</p>
