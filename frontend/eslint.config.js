@@ -28,4 +28,13 @@ export default [
   ...vueTsEslintConfig(),
   oxlint.configs['flat/recommended'],
   skipFormatting,
+
+  // UI component libraries allow for single-word naming.
+  {
+    name: 'app/ui-components-naming',
+    files: ['src/components/ui/**/*.vue'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  },
 ]
