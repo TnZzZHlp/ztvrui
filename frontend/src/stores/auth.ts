@@ -1,12 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-interface TokenData {
-  token: string
-  expiresAt: number
-  username: string
-}
-
 export const useAuthStore = defineStore('auth', () => {
   // State
   const token = ref<string | null>(null)

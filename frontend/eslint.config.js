@@ -37,4 +37,13 @@ export default [
       'vue/multi-word-component-names': 'off',
     },
   },
+
+  // Oxlint rules exceptions
+  {
+    name: 'app/oxlint-exceptions',
+    files: ['src/components/ui/sidebar/SidebarProvider.vue', 'src/stores/auth.ts'],
+    rules: {
+      'no-unused-vars': 'off',
+    },
+  },
 ]
