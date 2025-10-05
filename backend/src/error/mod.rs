@@ -33,20 +33,17 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication failed"),
-            AppError::InternalServerError(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-            }
-            AppError::ZeroTierError(_) => (StatusCode::BAD_GATEWAY, "ZeroTier API error"),
-            AppError::ConfigError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error"),
-            AppError::IoError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "IO error"),
-            AppError::JsonError(_) => (StatusCode::BAD_REQUEST, "Invalid JSON"),
-            AppError::ReqwestError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "HTTP client error"),
+            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
+            AppError::InternalServerError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            AppError::ZeroTierError(e) => (StatusCode::BAD_GATEWAY, e.to_string()),
+            AppError::ConfigError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            AppError::IoError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            AppError::JsonError(e) => (StatusCode::BAD_REQUEST, e.to_string()),
+            AppError::ReqwestError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
 
         let body = Json(json!({
             "error": error_message,
-            "details": self.to_string(),
         }));
 
         (status, body).into_response()
