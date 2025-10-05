@@ -29,15 +29,6 @@ pub async fn login(
     }
 }
 
-pub async fn check_auth(Extension(claims): Extension<Claims>) -> Result<impl IntoResponse> {
-    Ok(Json(json!({
-        "authenticated": true,
-        "username": claims.username,
-        "expires_at": claims.exp,
-        "issued_at": claims.iat
-    })))
-}
-
 pub async fn update_profile(
     State(app_state): State<AppState>,
     Extension(claims): Extension<Claims>,

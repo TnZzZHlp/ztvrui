@@ -1,4 +1,3 @@
-import { check } from '@/api/manage/check'
 import { useAuthStore } from '@/stores/auth'
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/LoginView.vue'
@@ -36,32 +35,16 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   // If going to login page and already authenticated, redirect to networks
-  if (to.name === 'login') {
-    if (authStore.isAuthenticated) {
-      return { name: 'networks' }
-    }
-    return true
-  }
-
-  // For protected routes, check authentication
-  try {
-    // First check local token
-    if (!authStore.token || authStore.isTokenExpired) {
-      throw new Error('No valid token')
-    }
-
-    // Verify with server
-    await check()
-    return true
-  } catch (error) {
-    console.log('Authentication check failed:', error)
-    // Clear any invalid tokens
-    authStore.clearAuth()
-    return { name: 'login' }
+  if (to.name === 'login' && authStore.isAuthenticated) {
+    next({ name: 'networks' })
+  } else if (to.name !== 'login' && !authStore.isAuthenticated) {
+    next({ name: 'login' })
+  } else {
+    next()
   }
 })
 

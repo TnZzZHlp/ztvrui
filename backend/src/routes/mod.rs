@@ -2,7 +2,7 @@ use crate::handlers::{self, *};
 use crate::state::AppState;
 use axum::{
     middleware::from_fn_with_state,
-    routing::{any, get, post},
+    routing::{any, post},
     Router,
 };
 
@@ -14,7 +14,6 @@ pub fn public_api_routes() -> Router<AppState> {
 // Protected API routes (authentication required)
 pub fn protected_api_routes() -> Router<AppState> {
     Router::new()
-        .route("/check", get(check_auth))
         .route("/editprofile", post(update_profile))
         .route("/refresh", post(refresh_token))
 }
