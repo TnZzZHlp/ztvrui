@@ -12,20 +12,6 @@ pub struct Claims {
     pub username: String, // Username for convenience
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LoginResponse {
-    pub token: String,
-    pub message: String,
-    pub expires_at: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthCheckResponse {
-    pub authenticated: bool,
-    pub username: String,
-    pub expires_at: i64,
-}
-
 #[derive(Clone)]
 pub struct AuthService {
     encoding_key: Arc<EncodingKey>,

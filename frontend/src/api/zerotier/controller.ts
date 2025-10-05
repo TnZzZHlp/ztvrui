@@ -5,155 +5,83 @@ import type {
   ControllerNetworkMemberInfo,
   ControllerNetworkMemberSettings,
 } from '@/types/zerotier/controller'
-import { authenticatedFetch } from '@/utils/apiUtils'
+import apiClient from '@/utils/axios'
 
-export function controllerStatus(): Promise<ControllerStatusInfo> {
-  return authenticatedFetch(`/ztapi/controller`, {
-    method: 'GET',
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error fetching controller status: ${response.statusText}`)
-    }
-    return response.json()
-  })
+export async function controllerStatus(): Promise<ControllerStatusInfo> {
+  const { data } = await apiClient.get<ControllerStatusInfo>('/ztapi/controller')
+  return data
 }
 
-export function listNetworkIds(): Promise<string[]> {
-  return authenticatedFetch(`/ztapi/controller/network`, {
-    method: 'GET',
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error fetching network Ids: ${response.statusText}`)
-    }
-    return response.json()
-  })
+export async function listNetworkIds(): Promise<string[]> {
+  const { data } = await apiClient.get<string[]>('/ztapi/controller/network')
+  return data
 }
 
-export function generateRandomNetworkId(
+export async function generateRandomNetworkId(
   networkInfo: ControllerNetworkInfo,
 ): Promise<ControllerNetworkInfo> {
-  return authenticatedFetch(`/ztapi/controller/network`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(networkInfo),
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error fetching network Ids: ${response.statusText}`)
-    }
-    return response.json()
-  })
+  const { data } = await apiClient.post<ControllerNetworkInfo>(
+    '/ztapi/controller/network',
+    networkInfo,
+  )
+  return data
 }
 
-export function getNetworkById(networkId: string): Promise<ControllerNetworkInfo> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error fetching network by Id: ${response.statusText}`)
-    }
-    return response.json()
-  })
+export async function getNetworkById(networkId: string): Promise<ControllerNetworkInfo> {
+  const { data } = await apiClient.get<ControllerNetworkInfo>(
+    `/ztapi/controller/network/${networkId}`,
+  )
+  return data
 }
 
-export function createOrUpdateNetwork(
+export async function createOrUpdateNetwork(
   networkId: string,
   controllerinfo: ControllerNetworkInfo,
 ): Promise<ControllerNetworkInfo> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(controllerinfo),
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error creating or updating network: ${response.statusText}`)
-    }
-    return response.json()
-  })
+  const { data } = await apiClient.post<ControllerNetworkInfo>(
+    `/ztapi/controller/network/${networkId}`,
+    controllerinfo,
+  )
+  return data
 }
 
-export function deleteNetwork(networkId: string): Promise<void> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error deleting network: ${response.statusText}`)
-    }
-  })
+export async function deleteNetwork(networkId: string): Promise<void> {
+  await apiClient.delete(`/ztapi/controller/network/${networkId}`)
 }
 
-export function listNetworkMemberIds(networkId: string): Promise<Members> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error fetching network member Ids: ${response.statusText}`)
-    }
-    return response.json()
-  })
+export async function listNetworkMemberIds(networkId: string): Promise<Members> {
+  const { data } = await apiClient.get<Members>(`/ztapi/controller/network/${networkId}/member`)
+  return data
 }
 
-export function getNetworkMemberById(
+export async function getNetworkMemberById(
   networkId: string,
   memberId: string,
 ): Promise<ControllerNetworkMemberInfo> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error fetching network member by Id: ${response.statusText}`)
-    }
-    return response.json()
-  })
+  const { data } = await apiClient.get<ControllerNetworkMemberInfo>(
+    `/ztapi/controller/network/${networkId}/member/${memberId}`,
+  )
+  return data
 }
 
-export function createOrUpdateNetworkMember(
+export async function createOrUpdateNetworkMember(
   networkId: string,
   memberId: string,
   memberSettings: ControllerNetworkMemberSettings,
 ): Promise<ControllerNetworkMemberInfo> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(memberSettings),
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error creating or updating network member: ${response.statusText}`)
-    }
-    return response.json()
-  })
+  const { data } = await apiClient.post<ControllerNetworkMemberInfo>(
+    `/ztapi/controller/network/${networkId}/member/${memberId}`,
+    memberSettings,
+  )
+  return data
 }
 
-export function deleteNetworkMember(
+export async function deleteNetworkMember(
   networkId: string,
   memberId: string,
 ): Promise<ControllerNetworkMemberInfo> {
-  return authenticatedFetch(`/ztapi/controller/network/${networkId}/member/${memberId}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Error deleting network member: ${response.statusText}`)
-    }
-    return response.json()
-  })
+  const { data } = await apiClient.delete<ControllerNetworkMemberInfo>(
+    `/ztapi/controller/network/${networkId}/member/${memberId}`,
+  )
+  return data
 }

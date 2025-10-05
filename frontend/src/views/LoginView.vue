@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { login } from '@/api/manage/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
-import { tokenManager } from '@/utils/tokenManager'
+import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
 
 // Check if user is already logged in
 onMounted(() => {
-  if (tokenManager.getToken() && !tokenManager.isTokenExpired()) {
+  if (authStore.isAuthenticated) {
     router.push({ name: 'networks' })
   }
 })

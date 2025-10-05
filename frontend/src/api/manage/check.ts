@@ -1,37 +1,31 @@
 import type { AuthCheckResponse } from '@/types/manage'
-import { tokenManager } from '@/utils/tokenManager'
+import { useAuthStore } from '@/stores/auth'
+import apiClient from '@/utils/axios'
 
 export async function check(): Promise<AuthCheckResponse> {
+  const authStore = useAuthStore()
+
   // First check if we have a valid token locally
-  if (tokenManager.isTokenExpired()) {
-    tokenManager.clearToken()
+  if (authStore.isTokenExpired) {
+    authStore.clearAuth()
     throw new Error('Token expired')
   }
 
-  const response = await fetch(`/api/check`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...tokenManager.getAuthHeader(),
-    },
-  })
+  try {
+    const { data } = await apiClient.get<AuthCheckResponse>('/api/check')
 
-  if (!response.ok) {
-    // Clear token if server says it's invalid
-    tokenManager.clearToken()
-    throw new Error(`Error checking auth status: ${response.statusText}`)
-  }
-
-  const data: AuthCheckResponse = await response.json()
-
-  // Update token data if response includes new info
-  const username = tokenManager.getUsername()
-  if (username && data.expires_at) {
-    const token = tokenManager.getToken()
-    if (token) {
-      tokenManager.setToken(token, data.expires_at, data.username)
+    // Update token data if response includes new info
+    if (authStore.username && data.expires_at) {
+      const token = authStore.token
+      if (token) {
+        authStore.setAuth(token, data.expires_at, data.username)
+      }
     }
-  }
 
-  return data
+    return data
+  } catch (error) {
+    // Clear token if server says it's invalid
+    authStore.clearAuth()
+    throw error
+  }
 }

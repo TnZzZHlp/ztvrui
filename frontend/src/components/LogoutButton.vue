@@ -13,12 +13,13 @@
 <script setup lang="ts">
 import { logout } from '@/api/manage/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
-import { tokenManager } from '@/utils/tokenManager'
+import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const handleLogout = async () => {
     try {
@@ -29,7 +30,6 @@ const handleLogout = async () => {
         // Still proceed with local logout even if server call fails
     } finally {
         // Always clear local session and redirect
-        tokenManager.clearToken()
         router.push({ name: 'login' })
     }
 }

@@ -1,82 +1,42 @@
 import type { Auth, LoginResponse, RefreshResponse } from '@/types/manage'
-import { tokenManager } from '@/utils/tokenManager'
+import { useAuthStore } from '@/stores/auth'
+import apiClient from '@/utils/axios'
 
 export async function login(auth: Auth): Promise<LoginResponse> {
-  const response = await fetch(`/api/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(auth),
-  })
+  const { data } = await apiClient.post<LoginResponse>('/api/login', auth)
 
-  if (!response.ok) {
-    throw new Error(`Error logging in: ${response.statusText}`)
-  }
-
-  const data: LoginResponse = await response.json()
-
-  // Store token in localStorage
-  tokenManager.setToken(data.token, data.expires_at, data.username)
+  // Store token in auth store
+  const authStore = useAuthStore()
+  authStore.setAuth(data.token, data.expires_at, data.username)
 
   return data
 }
 
 export async function logout(): Promise<void> {
-  // Clear local token first
-  tokenManager.clearToken()
+  const authStore = useAuthStore()
 
   try {
-    const response = await fetch(`/api/logout`, {
-      method: 'POST',
-      headers: {
-        ...tokenManager.getAuthHeader(),
-      },
-    })
-
-    if (!response.ok) {
-      console.warn(`Logout request failed: ${response.statusText}`)
-    }
+    await apiClient.post('/api/logout')
   } catch (error) {
     console.warn('Logout request failed:', error)
+  } finally {
+    // Always clear local auth
+    authStore.clearAuth()
   }
 }
 
 export async function refreshToken(): Promise<RefreshResponse> {
-  const response = await fetch(`/api/refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...tokenManager.getAuthHeader(),
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Error refreshing token: ${response.statusText}`)
-  }
-
-  const data: RefreshResponse = await response.json()
+  const authStore = useAuthStore()
+  const { data } = await apiClient.post<RefreshResponse>('/api/refresh')
 
   // Update stored token
-  const username = tokenManager.getUsername()
-  if (username) {
-    tokenManager.setToken(data.token, data.expires_at, username)
+  if (authStore.username) {
+    authStore.setAuth(data.token, data.expires_at, authStore.username)
   }
 
   return data
 }
 
 export async function editprofile(authInfo: Auth): Promise<void> {
-  const response = await fetch(`/api/editprofile`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...tokenManager.getAuthHeader(),
-    },
-    body: JSON.stringify(authInfo),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Error editing profile: ${response.statusText}`)
-  }
+  await apiClient.post('/api/editprofile', authInfo)
 }
