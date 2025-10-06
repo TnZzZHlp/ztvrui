@@ -43,6 +43,7 @@ const changeEnableBroadcast = (e: Event) => {
   createOrUpdateNetwork(data.id as string, payload)
     .then(() => {
       showSnackBar(t('common.updateSuccess'), 'success')
+      networkDetailStore.refreshNetworkData(data.id as string)
     })
     .catch((err) => {
       showSnackBar(t('common.updateFailed') + err, 'error')

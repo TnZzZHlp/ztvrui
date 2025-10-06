@@ -29,11 +29,8 @@ const changeNetworkType = (e: Event) => {
 
   createOrUpdateNetwork(data.id as string, payload)
     .then(() => {
-      const data = networkData.value
-      if (!data) return
-
-      data.private = checked
       showSnackBar(t('common.updateSuccess'), 'success')
+      networkDetailStore.refreshNetworkData(data.id as string)
     })
     .catch((err) => {
       showSnackBar(t('common.updateFailed') + err, 'error')

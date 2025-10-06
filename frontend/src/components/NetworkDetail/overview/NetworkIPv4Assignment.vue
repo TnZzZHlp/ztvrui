@@ -24,6 +24,8 @@ const changeIPv4Assignment = (e: Event) => {
 
   const checked = (e.target as HTMLInputElement).checked
 
+  console.debug('IPv4 zt assignment changed to:', checked)
+
   const payload: ControllerNetworkInfo = {
     ...data,
     v4AssignMode: {
@@ -34,6 +36,7 @@ const changeIPv4Assignment = (e: Event) => {
   createOrUpdateNetwork(data.id as string, payload)
     .then(() => {
       showSnackBar(t('common.updateSuccess'), 'success')
+      networkDetailStore.refreshNetworkData(data.id as string)
     })
     .catch((err) => {
       showSnackBar(t('common.updateFailed') + err, 'error')

@@ -40,6 +40,7 @@ const changeIPv6Assignment = (e: Event, type: string) => {
   createOrUpdateNetwork(data.value.id as string, payload)
     .then(() => {
       showSnackBar(t('common.updateSuccess'), 'success')
+      networkDetailStore.refreshNetworkData(data.value?.id as string)
     })
     .catch((err) => {
       showSnackBar(t('common.updateFailed') + err, 'error')
