@@ -97,7 +97,7 @@ const en = {
     routes: 'Routes',
     rules: {
       default: 'Network Rules',
-      warn: 'Network rules will be converted to ZeroTier rule format after being saved in browser. Once browser cache is cleared, the original text will be lost. Please remember to backup',
+      warn: 'Network rules will be converted to ZeroTier rule format after being saved in browser. Once browser cache is cleared, the original text will be lost. Please remember to backup. If you do not want to enable any rules, please keep one line of `accept;` otherwise, all traffic will be blocked.',
     },
     showQRCode: 'Show QR Code',
     hideQRCode: 'Hide QR Code',
