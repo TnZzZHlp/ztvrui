@@ -4,7 +4,7 @@ import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
 import './main.css'
-import { useNetworkDetailStore } from './stores/networkDetail'
+import { useNetworkDetailStore } from './stores/NetworkDetail'
 
 const app = createApp(App)
 const pinia = createPinia()

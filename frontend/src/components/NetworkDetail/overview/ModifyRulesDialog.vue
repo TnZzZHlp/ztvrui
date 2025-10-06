@@ -2,7 +2,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import _ from 'lodash'
-import { useNetworkDetailStore } from '@/stores/networkDetail'
+import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { eventBus } from '@/utils/eventBus'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'

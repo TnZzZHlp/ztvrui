@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/networkDetail'
+import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 
 const networkDetailStore = useNetworkDetailStore()
 import { computed } from 'vue'

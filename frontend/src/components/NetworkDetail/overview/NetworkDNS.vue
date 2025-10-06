@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/networkDetail'
+import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Settings } from 'lucide-vue-next'

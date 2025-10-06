@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/networkDetail'
+import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 import { Switch } from '@/components/ui/switch'
 import { NumberField, NumberFieldContent, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement } from '@/components/ui/number-field'
 

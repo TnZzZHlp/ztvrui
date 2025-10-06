@@ -16,7 +16,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { useNetworkDetailStore } from '@/stores/networkDetail'
+import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 
 const { t } = useI18n()
 const router = useRouter()
