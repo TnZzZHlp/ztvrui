@@ -2,6 +2,7 @@ use crate::error::{AppError, Result};
 use crate::models::{LoginRequest, UpdateProfileRequest};
 use crate::services::auth::Claims;
 use crate::state::AppState;
+use crate::utils::is_private_ip;
 use axum::{
     extract::{ConnectInfo, State},
     http::HeaderMap,
@@ -12,11 +13,21 @@ use serde_json::json;
 use std::net::{IpAddr, SocketAddr};
 
 /// Extract the real IP address from the request headers or connection information.
+/// Priority: If ConnectInfo IP is public, use it; otherwise check X-Real-IP and X-Forwarded-For headers.
 fn extract_real_ip(headers: &HeaderMap, fallback_addr: SocketAddr) -> IpAddr {
+    let connect_ip = fallback_addr.ip();
+
+    // If the IP from ConnectInfo is not private, use it directly
+    if !is_private_ip(&connect_ip) {
+        tracing::debug!("Using public IP from ConnectInfo: {}", connect_ip);
+        return connect_ip;
+    }
+
+    // Otherwise, check proxy headers
     if let Some(real_ip) = headers.get("X-Real-IP") {
         if let Ok(ip_str) = real_ip.to_str() {
             if let Ok(ip) = ip_str.parse::<IpAddr>() {
-                tracing::debug!("Got IP from X-Real-IP: {}", ip);
+                tracing::debug!("Got IP from X-Real-IP header: {}", ip);
                 return ip;
             }
         }
@@ -27,16 +38,16 @@ fn extract_real_ip(headers: &HeaderMap, fallback_addr: SocketAddr) -> IpAddr {
             if let Some(first_ip) = forwarded_str.split(',').next() {
                 let ip_str = first_ip.trim();
                 if let Ok(ip) = ip_str.parse::<IpAddr>() {
-                    tracing::debug!("Got IP from X-Forwarded-For: {}", ip);
+                    tracing::debug!("Got IP from X-Forwarded-For header: {}", ip);
                     return ip;
                 }
             }
         }
     }
 
-    let ip = fallback_addr.ip();
-    tracing::debug!("Using fallback IP from ConnectInfo: {}", ip);
-    ip
+    // Fallback to ConnectInfo IP (even if private)
+    tracing::debug!("Using fallback private IP from ConnectInfo: {}", connect_ip);
+    connect_ip
 }
 
 pub async fn login(

@@ -1,24 +1,19 @@
 use chrono::{DateTime, Duration, Utc};
+use ipnet::Ipv6Net;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-/// IP失败记录
 #[derive(Debug, Clone)]
 struct FailureRecord {
-    /// 失败次数
     count: u32,
-    /// 记录开始时间（用于判断是否超过1小时）
     first_failure: DateTime<Utc>,
-    /// 封禁结束时间（如果被封禁）
     banned_until: Option<DateTime<Utc>>,
 }
 
-/// IP封禁服务 - 简化版
 #[derive(Clone)]
 pub struct IpBanService {
-    /// 失败记录：IP地址 -> 失败记录
     records: Arc<RwLock<HashMap<IpAddr, FailureRecord>>>,
 }
 
@@ -35,17 +30,37 @@ impl IpBanService {
         }
     }
 
+    /// Get the ban key for the IP address
+    /// For IPv4, use the original IP address
+    /// For IPv6, use the /48 subnet
+    fn get_ban_key(ip: &IpAddr) -> IpAddr {
+        match ip {
+            IpAddr::V4(ipv4) => IpAddr::V4(*ipv4),
+            IpAddr::V6(ipv6) => {
+                // Convert the IPv6 address into a /48 network, then obtain the network address.
+                match Ipv6Net::new(*ipv6, 48) {
+                    Ok(net) => IpAddr::V6(net.network()),
+                    Err(_) => {
+                        // quick fallback to the original IP if network creation fails
+                        tracing::warn!("Failed to create /48 network for IPv6 address: {}", ipv6);
+                        IpAddr::V6(*ipv6)
+                    }
+                }
+            }
+        }
+    }
     /// Check if the IP is blocked
     pub async fn is_banned(&self, ip: &IpAddr) -> bool {
+        let ban_key = Self::get_ban_key(ip);
         let mut records = self.records.write().await;
 
-        if let Some(record) = records.get(ip) {
+        if let Some(record) = records.get(&ban_key) {
             if let Some(banned_until) = record.banned_until {
                 let now = Utc::now();
 
                 // If the ban has expired, clear the ban status
                 if now >= banned_until {
-                    if let Some(rec) = records.get_mut(ip) {
+                    if let Some(rec) = records.get_mut(&ban_key) {
                         rec.banned_until = None;
                         rec.count = 0;
                     }
@@ -64,9 +79,10 @@ impl IpBanService {
     /// Record of failed attempts
     pub async fn record_failure(&self, ip: &IpAddr) {
         let now = Utc::now();
+        let ban_key = Self::get_ban_key(ip);
         let mut records = self.records.write().await;
 
-        let record = records.entry(*ip).or_insert(FailureRecord {
+        let record = records.entry(ban_key).or_insert(FailureRecord {
             count: 0,
             first_failure: now,
             banned_until: None,
@@ -80,11 +96,11 @@ impl IpBanService {
         } else {
             record.count += 1;
 
-            // If you fail 5 times, you will be banned for 1 hour.
+            // If you fail 5 times, you will be banned for 1 day.
             if record.count >= 5 {
-                record.banned_until = Some(now + Duration::hours(1));
+                record.banned_until = Some(now + Duration::days(1));
                 tracing::warn!(
-                    "IP {} has been banned for 1 hour due to {} failed login attempts",
+                    "IP {} has been banned for 1 day due to {} failed login attempts",
                     ip,
                     record.count
                 );
@@ -92,17 +108,19 @@ impl IpBanService {
         }
     }
 
-    /// 清除失败记录
+    /// Clear failure records
     pub async fn record_success(&self, ip: &IpAddr) {
+        let ban_key = Self::get_ban_key(ip);
         let mut records = self.records.write().await;
-        records.remove(ip);
+        records.remove(&ban_key);
     }
 
-    /// 获取IP剩余的封禁时间
+    /// Get the remaining ban time of the IP
     pub async fn get_ban_remaining_seconds(&self, ip: &IpAddr) -> Option<i64> {
+        let ban_key = Self::get_ban_key(ip);
         let records = self.records.read().await;
 
-        if let Some(record) = records.get(ip) {
+        if let Some(record) = records.get(&ban_key) {
             if let Some(banned_until) = record.banned_until {
                 let now = Utc::now();
                 let remaining = banned_until - now;
