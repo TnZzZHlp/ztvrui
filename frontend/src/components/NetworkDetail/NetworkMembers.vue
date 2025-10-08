@@ -7,7 +7,7 @@ import {
 } from '@/api/zerotier/controller'
 import type { ControllerNetworkMemberInfo } from '@/types/zerotier/controller'
 import { showSnackBar } from '@/utils/showSnackBar'
-import { computed, onBeforeMount, ref } from 'vue'
+import { computed, onBeforeMount, onBeforeUnmount, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { copyToClipboard } from '@/utils/copyToClipboard'
@@ -102,10 +102,22 @@ const fetchMembers = () => {
     })
 }
 
+
+
+// Regularly update the member list
+const Timer = setInterval(() => {
+  fetchMembers()
+}, 5000)
+
 onBeforeMount(() => {
   // Get network member ids
   fetchMembers()
   eventBus.addEventListener('networkMemberChanged', fetchMembers)
+})
+
+onBeforeUnmount(() => {
+  eventBus.removeEventListener('networkMemberChanged', fetchMembers)
+  clearInterval(Timer)
 })
 </script>
 
