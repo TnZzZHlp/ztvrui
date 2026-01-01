@@ -3,6 +3,7 @@ import { login } from '@/api/manage/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -35,7 +36,12 @@ const Login = async (e: Event) => {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+  <div class="relative flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+    <!-- Theme Toggle -->
+    <div class="absolute top-4 right-4">
+      <ThemeToggle />
+    </div>
+
     <!-- Logo -->
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
       <img class="mx-auto h-30 w-auto" src="/icon.png" alt="ZTVRUI Icon" />
@@ -45,35 +51,35 @@ const Login = async (e: Event) => {
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
       <form class="space-y-6" @submit="Login">
         <div>
-          <label for="email" class="block text-sm/6 font-medium text-gray-900">{{
+          <label for="email" class="block text-sm/6 font-medium text-foreground">{{
             t('auth.username')
           }}</label>
           <div class="mt-2">
             <input type="username" name="username" id="username" autocomplete="username"
-              class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-input placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
           </div>
         </div>
 
         <div>
           <div class="flex items-center justify-between">
-            <label for="password" class="block text-sm/6 font-medium text-gray-900">{{
+            <label for="password" class="block text-sm/6 font-medium text-foreground">{{
               t('auth.password')
             }}</label>
             <div class="text-sm">
-              <a href="#" class="font-semibold text-indigo-600 hover:text-indigo-500">{{
+              <a href="#" class="font-semibold text-primary hover:text-primary/80">{{
                 t('auth.forgotPassword')
               }}</a>
             </div>
           </div>
           <div class="mt-2">
             <input type="password" name="password" id="password" autocomplete="current-password"
-              class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
+              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-input placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
           </div>
         </div>
 
         <div>
           <button type="submit"
-            class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-primary-foreground shadow-xs hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             {{ t('auth.login') }}
           </button>
         </div>
