@@ -2,33 +2,33 @@
 # build = "build.rs"
 edition = "2021"
 name = "backend"
-version = "0.1.0"
+version = "0.3.3"
 
 [dependencies]
 # Web framework
-axum = {version = "0.8.6", features = ["macros"]}
-tower = {version = "0.5.2", features = ["util"]}
-tower-http = {version = "0.6.6", features = ["fs", "cors", "trace"]}
+axum = { version = "0.8.6", features = ["macros"] }
+tower = { version = "0.5.2", features = ["util"] }
+tower-http = { version = "0.6.6", features = ["fs", "cors", "trace"] }
 
 # Async runtime
-tokio = {version = "1.43.1", features = ["full"]}
+tokio = { version = "1.43.1", features = ["full"] }
 
 # Serialization
-serde = {version = "1.0.216", features = ["derive"]}
+serde = { version = "1.0.216", features = ["derive"] }
 serde_json = "1.0.133"
 
 # HTTP client
-reqwest = {version = "0.12.8", features = ["json"]}
+reqwest = { version = "0.12.8", features = ["json"] }
 
 # Authentication & Security
 base64 = "0.22.1"
 bcrypt = "0.17.0"
-chrono = {version = "0.4", features = ["serde"]}
+chrono = { version = "0.4", features = ["serde"] }
 jsonwebtoken = "9.3"
-uuid = {version = "1.11.0", features = ["v4"]}
+uuid = { version = "1.11.0", features = ["v4"] }
 
 # Configuration & CLI
-clap = {version = "4.5.23", features = ["derive"]}
+clap = { version = "4.5.23", features = ["derive"] }
 
 # Static files
 include_dir = "0.7.4"
@@ -36,7 +36,11 @@ mime_guess = "2.0.5"
 
 # Logging
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["chrono", "env-filter", "fmt"] }
+tracing-subscriber = { version = "0.3.19", features = [
+    "chrono",
+    "env-filter",
+    "fmt",
+] }
 
 # Error handling
 thiserror = "2.0.16"
