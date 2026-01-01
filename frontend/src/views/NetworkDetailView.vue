@@ -17,6 +17,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { useNetworkDetailStore } from '@/stores/NetworkDetail'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -60,6 +61,7 @@ onMounted(() => {
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">ZTVRUI</span>
               </div>
+              <ThemeToggle />
             </div>
           </SidebarHeader>
           <SidebarContent>

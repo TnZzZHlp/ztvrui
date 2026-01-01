@@ -5,6 +5,7 @@ import router from './router'
 import i18n from './i18n'
 import './main.css'
 import { useNetworkDetailStore } from './stores/NetworkDetail'
+import { useThemeStore } from './stores/theme'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -18,3 +19,7 @@ app.mount('#app')
 // Initialize network detail store event listener
 const networkDetailStore = useNetworkDetailStore()
 networkDetailStore.initEventListener()
+
+// Initialize theme
+const themeStore = useThemeStore()
+themeStore.loadTheme()
