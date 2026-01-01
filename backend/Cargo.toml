@@ -43,3 +43,4 @@ thiserror = "2.0.16"
 
 # State management
 arc-swap = "1.7"
+ipnet = "2.11.0"

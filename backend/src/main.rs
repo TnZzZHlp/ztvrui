@@ -9,6 +9,7 @@ mod models;
 mod routes;
 mod services;
 mod state;
+mod utils;
 
 use services::ConfigService;
 use state::AppState;
