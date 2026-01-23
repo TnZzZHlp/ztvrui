@@ -5,7 +5,6 @@ import NetworksComponent from '@/components/Networks/NetworkList.vue'
 import AddNetworkDialog from '@/components/Networks/AddNetworkDialog.vue'
 import ModifyInfoDialog from '@/components/Networks/ModifyInfoDialog.vue'
 import { Button } from '@/components/ui/button'
-import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const { t } = useI18n()
 const showAddDialog = ref(false)
@@ -19,7 +18,6 @@ const showModifyDialog = ref(false)
       <div class="h-full flex items-center justify-between px-4">
         <span class="font-bold text-xl">{{ t('network.default') }}</span>
         <div class="flex items-center gap-2">
-          <ThemeToggle />
           <Button variant="outline" class="mx-2" @click="showModifyDialog = true">
             {{ t('auth.modifyInfo') }}
           </Button>

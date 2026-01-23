@@ -3,7 +3,6 @@ import { login } from '@/api/manage/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -37,10 +36,6 @@ const Login = async (e: Event) => {
 
 <template>
   <div class="relative flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-    <!-- Theme Toggle -->
-    <div class="absolute top-4 right-4">
-      <ThemeToggle />
-    </div>
 
     <!-- Logo -->
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
