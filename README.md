@@ -67,12 +67,19 @@ cat /var/lib/zerotier-one/authtoken.secret
     "password": "$2b$08$L0G551nXjXw78mUANEC31uUXyx2SsEsmYkq7xPsa2umnQ/YSBeYV6"
   },
   "listen": "0.0.0.0:7000",
+  "api_keys": [],
   "zerotier": {
     "auth_token": "your_zerotier_token",
     "address": "http://127.0.0.1:9993"
   }
 }
 
+```
+
+The `api_keys` field is optional. Add your own generated key when automation clients need to request the ZeroTier API proxy with `X-API-Key`:
+
+```bash
+curl -H "X-API-Key: your_api_key_for_automation" http://127.0.0.1:7000/ztapi/status
 ```
 
 </br>

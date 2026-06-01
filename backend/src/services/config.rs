@@ -34,6 +34,17 @@ impl ConfigService {
         username == config.info.username && verify(password, &config.info.password).unwrap_or(false)
     }
 
+    pub fn verify_api_key(&self, api_key: &str) -> bool {
+        if api_key.is_empty() {
+            return false;
+        }
+
+        self.get_config()
+            .api_keys
+            .iter()
+            .any(|configured_key| configured_key == api_key)
+    }
+
     pub async fn update_user_info(&self, username: &str, password: &str) -> Result<()> {
         let mut config = (*self.get_config()).clone();
 

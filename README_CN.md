@@ -63,12 +63,19 @@ cat /var/lib/zerotier-one/authtoken.secret
     "password": "$2b$08$L0G551nXjXw78mUANEC31uUXyx2SsEsmYkq7xPsa2umnQ/YSBeYV6"
   },
   "listen": "0.0.0.0:7000",
+  "api_keys": [],
   "zerotier": {
     "auth_token": "your_zerotier_token",
     "address": "http://127.0.0.1:9993"
   }
 }
 
+```
+
+`api_keys` 字段为可选配置。需要让自动化客户端通过 `X-API-Key` 请求 ZeroTier API 代理时，请填入自己生成的密钥：
+
+```bash
+curl -H "X-API-Key: your_api_key_for_automation" http://127.0.0.1:7000/ztapi/status
 ```
 
 </br>

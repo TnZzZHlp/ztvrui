@@ -28,6 +28,8 @@ pub struct ZeroTierConfig {
 pub struct AppConfig {
     pub info: UserInfo,
     pub listen: String,
+    #[serde(default)]
+    pub api_keys: Vec<String>,
     pub zerotier: ZeroTierConfig,
 }
 
@@ -39,6 +41,7 @@ impl Default for AppConfig {
                 password: String::new(),
             },
             listen: "127.0.0.1:3000".to_string(),
+            api_keys: Vec::new(),
             zerotier: ZeroTierConfig {
                 auth_token: String::new(),
                 address: String::new(),

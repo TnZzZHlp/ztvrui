@@ -1,17 +1,14 @@
 use crate::error::{AppError, Result};
-use crate::services::auth::Claims;
 use crate::state::AppState;
 use axum::{
     body::{Body, Bytes},
     extract::State,
     http::{Method, StatusCode, Uri},
     response::{IntoResponse, Response},
-    Extension,
 };
 
 pub async fn forward_to_zerotier(
     State(app_state): State<AppState>,
-    Extension(_claims): Extension<Claims>, // Claims already validated by middleware
     method: Method,
     uri: Uri,
     body: Bytes,

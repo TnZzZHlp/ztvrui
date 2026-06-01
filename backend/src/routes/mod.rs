@@ -40,7 +40,7 @@ pub fn app_routes(app_state: AppState) -> Router {
             "/ztapi",
             zerotier_routes().layer(from_fn_with_state(
                 app_state.clone(),
-                crate::middleware::auth_middleware,
+                crate::middleware::auth_or_api_key_middleware,
             )),
         )
         .fallback(handlers::serve_static_files)
