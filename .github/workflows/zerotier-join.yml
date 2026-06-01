@@ -7,8 +7,13 @@ on:
         description: 'ZeroTier Network ID'
         required: true
         type: string
+      server-url:
+        description: 'ZTVRUI server URL (e.g., https://zt.example.com)'
+        required: false
+        type: string
+        default: ''
       authorize:
-        description: 'Auto-authorize member via ZeroTier Central API'
+        description: 'Auto-authorize member via ZTVRUI API proxy or ZeroTier Central API'
         required: false
         type: boolean
         default: false
@@ -19,7 +24,10 @@ on:
         default: ''
     secrets:
       zerotier-api-key:
-        description: 'ZeroTier Central API Key (required if authorize is true)'
+        description: 'ZeroTier Central API Key (required if authorize is true and server-url is empty)'
+        required: false
+      ztvrui-api-key:
+        description: 'ZTVRUI API Key (required if authorize is true and server-url is set)'
         required: false
     outputs:
       member-id:
@@ -68,16 +76,29 @@ jobs:
         if: ${{ inputs.authorize }}
         env:
           ZEROTIER_API_KEY: ${{ secrets.zerotier-api-key }}
+          ZTVRUI_API_KEY: ${{ secrets.ztvrui-api-key }}
+          SERVER_URL: ${{ inputs.server-url }}
           NETWORK_ID: ${{ inputs.network-id }}
         run: |
           MEMBER_ID="${{ steps.get-member-id.outputs.member-id }}"
           echo "Authorizing member: $MEMBER_ID"
           
-          curl -s -X POST \
-            "https://api.zerotier.com/api/v1/network/${NETWORK_ID}/member/${MEMBER_ID}" \
-            -H "Authorization: token ${ZEROTIER_API_KEY}" \
-            -H "Content-Type: application/json" \
-            -d '{"config": {"authorized": true}}'
+          if [ -n "$SERVER_URL" ]; then
+            # Use ZTVRUI API proxy
+            echo "Using ZTVRUI server: $SERVER_URL"
+            curl -s -X POST \
+              "${SERVER_URL}/ztapi/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+              -H "X-API-Key: ${ZTVRUI_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"config": {"authorized": true}}'
+          else
+            # Use ZeroTier Central API directly
+            curl -s -X POST \
+              "https://api.zerotier.com/api/v1/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+              -H "Authorization: token ${ZEROTIER_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"config": {"authorized": true}}'
+          fi
 
       - name: Verify Connection
         run: |
@@ -123,13 +144,23 @@ jobs:
         if: always() && inputs.authorize
         env:
           ZEROTIER_API_KEY: ${{ secrets.zerotier-api-key }}
+          ZTVRUI_API_KEY: ${{ secrets.ztvrui-api-key }}
+          SERVER_URL: ${{ inputs.server-url }}
           NETWORK_ID: ${{ inputs.network-id }}
         run: |
           MEMBER_ID="${{ steps.get-member-id.outputs.member-id }}"
           echo "Deleting member: $MEMBER_ID"
           
-          curl -s -X DELETE \
-            "https://api.zerotier.com/api/v1/network/${NETWORK_ID}/member/${MEMBER_ID}" \
-            -H "Authorization: token ${ZEROTIER_API_KEY}"
+          if [ -n "$SERVER_URL" ]; then
+            # Use ZTVRUI API proxy
+            curl -s -X DELETE \
+              "${SERVER_URL}/ztapi/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+              -H "X-API-Key: ${ZTVRUI_API_KEY}"
+          else
+            # Use ZeroTier Central API directly
+            curl -s -X DELETE \
+              "https://api.zerotier.com/api/v1/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+              -H "Authorization: token ${ZEROTIER_API_KEY}"
+          fi
           
           echo "Member deleted from network."
