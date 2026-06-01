@@ -103,23 +103,34 @@ jobs:
       - name: Verify Connection
         run: |
           AUTHTOKEN=$(sudo cat /var/lib/zerotier-one/authtoken.secret)
+          NETWORK_ID="${{ inputs.network-id }}"
           
-          echo "Waiting for network connection..."
-          sleep 10
+          echo "Waiting for network configuration..."
           
-          echo "Joined networks:"
-          curl -s "http://localhost:9993/network" \
+          # Wait up to 60 seconds for IP assignment
+          for i in $(seq 1 30); do
+            NETWORK_STATUS=$(curl -s "http://localhost:9993/network/${NETWORK_ID}" \
+              -H "X-ZT1-Auth: $AUTHTOKEN")
+            
+            STATUS=$(echo "$NETWORK_STATUS" | jq -r '.status')
+            ASSIGNED_ADDRESSES=$(echo "$NETWORK_STATUS" | jq -r '.assignedAddresses | length')
+            
+            if [ "$STATUS" != "REQUESTING_CONFIGURATION" ] && [ "$ASSIGNED_ADDRESSES" -gt 0 ]; then
+              echo "Network configuration complete!"
+              echo "Status: $STATUS"
+              echo "Assigned addresses:"
+              echo "$NETWORK_STATUS" | jq -r '.assignedAddresses[]'
+              break
+            fi
+            
+            echo "Waiting... (status: $STATUS, addresses: $ASSIGNED_ADDRESSES)"
+            sleep 2
+          done
+          
+          echo ""
+          echo "Final network status:"
+          curl -s "http://localhost:9993/network/${NETWORK_ID}" \
             -H "X-ZT1-Auth: $AUTHTOKEN" | jq '.'
-          
-          NETWORK_STATUS=$(curl -s "http://localhost:9993/network/${{ inputs.network-id }}" \
-            -H "X-ZT1-Auth: $AUTHTOKEN")
-          
-          if echo "$NETWORK_STATUS" | jq -e '.id' > /dev/null 2>&1; then
-            echo "Successfully joined ZeroTier network!"
-            echo "$NETWORK_STATUS" | jq '.'
-          else
-            echo "Warning: Network may not be authorized yet."
-          fi
 
       - name: Run Commands
         id: run-commands
