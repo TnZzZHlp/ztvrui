@@ -87,10 +87,10 @@ jobs:
             # Use ZTVRUI API proxy
             echo "Using ZTVRUI server: $SERVER_URL"
             curl -s -X POST \
-              "${SERVER_URL}/ztapi/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+              "${SERVER_URL}/ztapi/controller/network/${NETWORK_ID}/member/${MEMBER_ID}" \
               -H "X-API-Key: ${ZTVRUI_API_KEY}" \
               -H "Content-Type: application/json" \
-              -d '{"config": {"authorized": true}}'
+              -d '{"authorized": true}'
           else
             # Use ZeroTier Central API directly
             curl -s -X POST \
@@ -154,7 +154,7 @@ jobs:
           if [ -n "$SERVER_URL" ]; then
             # Use ZTVRUI API proxy
             curl -s -X DELETE \
-              "${SERVER_URL}/ztapi/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+              "${SERVER_URL}/ztapi/controller/network/${NETWORK_ID}/member/${MEMBER_ID}" \
               -H "X-API-Key: ${ZTVRUI_API_KEY}"
           else
             # Use ZeroTier Central API directly
