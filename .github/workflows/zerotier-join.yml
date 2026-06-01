@@ -90,7 +90,7 @@ jobs:
               "${SERVER_URL}/ztapi/controller/network/${NETWORK_ID}/member/${MEMBER_ID}" \
               -H "X-API-Key: ${ZTVRUI_API_KEY}" \
               -H "Content-Type: application/json" \
-              -d '{"authorized": true}'
+              -d '{"config": {"authorized": true}}'
           else
             # Use ZeroTier Central API directly
             curl -s -X POST \
