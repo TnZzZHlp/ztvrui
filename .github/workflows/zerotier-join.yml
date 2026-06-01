@@ -1,0 +1,135 @@
+name: ZeroTier Join Network
+
+on:
+  workflow_call:
+    inputs:
+      network-id:
+        description: 'ZeroTier Network ID'
+        required: true
+        type: string
+      authorize:
+        description: 'Auto-authorize member via ZeroTier Central API'
+        required: false
+        type: boolean
+        default: false
+      commands:
+        description: 'Commands to run on ZeroTier network (multiline supported)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      zerotier-api-key:
+        description: 'ZeroTier Central API Key (required if authorize is true)'
+        required: false
+    outputs:
+      member-id:
+        description: 'ZeroTier Member ID'
+        value: ${{ jobs.join-network.outputs.member-id }}
+      result:
+        description: 'Output of the commands'
+        value: ${{ jobs.join-network.outputs.result }}
+
+jobs:
+  join-network:
+    runs-on: ubuntu-latest
+    outputs:
+      member-id: ${{ steps.get-member-id.outputs.member-id }}
+      result: ${{ steps.run-commands.outputs.result }}
+
+    steps:
+      - name: Install ZeroTier One
+        run: |
+          curl -s https://install.zerotier.com | sudo bash
+
+      - name: Join ZeroTier Network
+        run: |
+          sleep 3
+          
+          AUTHTOKEN=$(sudo cat /var/lib/zerotier-one/authtoken.secret)
+          
+          curl -s -X POST "http://localhost:9993/network/${{ inputs.network-id }}" \
+            -H "X-ZT1-Auth: $AUTHTOKEN" \
+            -H "Content-Type: application/json"
+          
+          echo "Join request sent to ZeroTier network: ${{ inputs.network-id }}"
+
+      - name: Get Member ID
+        id: get-member-id
+        run: |
+          AUTHTOKEN=$(sudo cat /var/lib/zerotier-one/authtoken.secret)
+          
+          MEMBER_ID=$(curl -s "http://localhost:9993/status" \
+            -H "X-ZT1-Auth: $AUTHTOKEN" | jq -r '.address')
+          
+          echo "ZeroTier Member ID: $MEMBER_ID"
+          echo "member-id=$MEMBER_ID" >> $GITHUB_OUTPUT
+
+      - name: Authorize Member
+        if: ${{ inputs.authorize }}
+        env:
+          ZEROTIER_API_KEY: ${{ secrets.zerotier-api-key }}
+          NETWORK_ID: ${{ inputs.network-id }}
+        run: |
+          MEMBER_ID="${{ steps.get-member-id.outputs.member-id }}"
+          echo "Authorizing member: $MEMBER_ID"
+          
+          curl -s -X POST \
+            "https://api.zerotier.com/api/v1/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+            -H "Authorization: token ${ZEROTIER_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"config": {"authorized": true}}'
+
+      - name: Verify Connection
+        run: |
+          AUTHTOKEN=$(sudo cat /var/lib/zerotier-one/authtoken.secret)
+          
+          echo "Waiting for network connection..."
+          sleep 10
+          
+          echo "Joined networks:"
+          curl -s "http://localhost:9993/network" \
+            -H "X-ZT1-Auth: $AUTHTOKEN" | jq '.'
+          
+          NETWORK_STATUS=$(curl -s "http://localhost:9993/network/${{ inputs.network-id }}" \
+            -H "X-ZT1-Auth: $AUTHTOKEN")
+          
+          if echo "$NETWORK_STATUS" | jq -e '.id' > /dev/null 2>&1; then
+            echo "Successfully joined ZeroTier network!"
+            echo "$NETWORK_STATUS" | jq '.'
+          else
+            echo "Warning: Network may not be authorized yet."
+          fi
+
+      - name: Run Commands
+        id: run-commands
+        if: ${{ inputs.commands != '' }}
+        run: |
+          echo "Running commands on ZeroTier network..."
+          ${{ inputs.commands }}
+          echo "result=$?" >> $GITHUB_OUTPUT
+
+      - name: Leave Network
+        if: always()
+        run: |
+          AUTHTOKEN=$(sudo cat /var/lib/zerotier-one/authtoken.secret)
+          
+          echo "Leaving ZeroTier network..."
+          curl -s -X DELETE "http://localhost:9993/network/${{ inputs.network-id }}" \
+            -H "X-ZT1-Auth: $AUTHTOKEN"
+          
+          echo "Left network."
+
+      - name: Delete Member from Network
+        if: always() && inputs.authorize
+        env:
+          ZEROTIER_API_KEY: ${{ secrets.zerotier-api-key }}
+          NETWORK_ID: ${{ inputs.network-id }}
+        run: |
+          MEMBER_ID="${{ steps.get-member-id.outputs.member-id }}"
+          echo "Deleting member: $MEMBER_ID"
+          
+          curl -s -X DELETE \
+            "https://api.zerotier.com/api/v1/network/${NETWORK_ID}/member/${MEMBER_ID}" \
+            -H "Authorization: token ${ZEROTIER_API_KEY}"
+          
+          echo "Member deleted from network."
