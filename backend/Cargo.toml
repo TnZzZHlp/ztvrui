@@ -24,7 +24,7 @@ reqwest = { version = "0.12.8", features = ["json"] }
 base64 = "0.22.1"
 bcrypt = "0.17.0"
 chrono = { version = "0.4", features = ["serde"] }
-jsonwebtoken = "9.3"
+jsonwebtoken = "10.3"
 uuid = { version = "1.11.0", features = ["v4"] }
 
 # Configuration & CLI
