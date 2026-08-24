@@ -1,16 +1,10 @@
 import type {
   ControllerNetworkInfo,
-  ControllerStatusInfo,
   Members,
   ControllerNetworkMemberInfo,
   ControllerNetworkMemberSettings,
 } from '@/types/zerotier/controller'
 import apiClient from '@/utils/axios'
-
-export async function controllerStatus(): Promise<ControllerStatusInfo> {
-  const { data } = await apiClient.get<ControllerStatusInfo>('/ztapi/controller')
-  return data
-}
 
 export async function listNetworkIds(): Promise<string[]> {
   const { data } = await apiClient.get<string[]>('/ztapi/controller/network')

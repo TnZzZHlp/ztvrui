@@ -5,15 +5,8 @@ import { useRouter } from 'vue-router'
 import { LayoutDashboard, Users, ArrowLeft } from 'lucide-vue-next'
 import {
   Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
-  SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { useNetworkDetailStore } from '@/stores/NetworkDetail'
@@ -55,37 +48,39 @@ onMounted(() => {
     <SidebarProvider>
       <div class="flex h-screen w-full">
         <Sidebar collapsible="icon">
-          <SidebarHeader>
+          <div data-slot="sidebar-header" data-sidebar="header" class="flex flex-col gap-2 p-2">
             <div class="flex items-center gap-2 p-2">
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">ZTVRUI</span>
               </div>
             </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem v-for="item in siderBarItems" :key="item.name">
+          </div>
+          <div data-slot="sidebar-content" data-sidebar="content"
+            class="flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden">
+            <div data-slot="sidebar-group" data-sidebar="group" class="relative flex w-full min-w-0 flex-col p-2">
+              <div data-slot="sidebar-group-content" data-sidebar="group-content" class="w-full text-sm">
+                <ul data-slot="sidebar-menu" data-sidebar="menu" class="flex w-full min-w-0 flex-col gap-1">
+                  <li data-slot="sidebar-menu-item" data-sidebar="menu-item" class="group/menu-item relative"
+                    v-for="item in siderBarItems" :key="item.name">
                     <SidebarMenuButton :is-active="router.currentRoute.value.name === item.name"
                       @click="handleNavigation(item.name)">
                       <component :is="item.icon" />
                       <span>{{ item.label }}</span>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
+                  </li>
+                  <li data-slot="sidebar-menu-item" data-sidebar="menu-item" class="group/menu-item relative">
                     <SidebarMenuButton @click="handleReturn">
                       <ArrowLeft />
                       <span>{{ t('common.return') }}</span>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </Sidebar>
 
-        <SidebarInset class="flex flex-col">
+        <main data-slot="sidebar-inset" class="bg-background relative flex w-full flex-1 flex-col">
           <!-- Header -->
           <header class="flex h-[60px] shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger />
@@ -100,7 +95,7 @@ onMounted(() => {
               </transition>
             </router-view>
           </main>
-        </SidebarInset>
+        </main>
       </div>
     </SidebarProvider>
   </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { editProfile } from '@/api/manage/editProfile'
+import { editProfile } from '@/api/manage/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { Input } from '@/components/ui/input'
 import {

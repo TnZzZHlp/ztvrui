@@ -16,7 +16,6 @@ pub struct Claims {
 pub struct AuthService {
     encoding_key: Arc<EncodingKey>,
     decoding_key: Arc<DecodingKey>,
-    token_duration: Duration,
 }
 
 impl AuthService {
@@ -24,13 +23,12 @@ impl AuthService {
         Self {
             encoding_key: Arc::new(EncodingKey::from_secret(secret.as_ref())),
             decoding_key: Arc::new(DecodingKey::from_secret(secret.as_ref())),
-            token_duration: Duration::hours(168),
         }
     }
 
     pub fn create_token(&self, username: &str) -> Result<(String, i64)> {
         let now = Utc::now();
-        let exp = now + self.token_duration;
+        let exp = now + Duration::hours(168);
 
         let claims = Claims {
             sub: username.to_string(),

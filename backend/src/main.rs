@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = app_routes(app_state.clone());
 
     // Get listen address from config
-    let listen_addr = config_service.get_listen_address();
+    let listen_addr = config_service.get_config().listen.clone();
     tracing::info!("Starting server on {}", listen_addr);
 
     // Start the server

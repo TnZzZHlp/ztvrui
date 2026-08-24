@@ -1,21 +1,14 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/NetworkDetail'
+import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
 import { Switch } from '@/components/ui/switch'
 
-const networkDetailStore = useNetworkDetailStore()
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
 import { showSnackBar } from '@/utils/showSnackBar'
 import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
 
-const route = useRoute()
 const { t } = useI18n()
-
-const networkData = computed(() => {
-  return networkDetailStore.networksData.find((data) => data.id === (route.params.networkId as string))
-})
+const { networkData, networkDetailStore } = useCurrentNetwork()
 
 const changeNetworkType = (e: Event) => {
   const checked = (e.target as HTMLInputElement).checked

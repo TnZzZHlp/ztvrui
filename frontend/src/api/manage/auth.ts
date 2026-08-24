@@ -12,19 +12,6 @@ export async function login(auth: Auth): Promise<LoginResponse> {
   return data
 }
 
-export async function logout(): Promise<void> {
-  const authStore = useAuthStore()
-
-  try {
-    await apiClient.post('/api/logout')
-  } catch (error) {
-    console.warn('Logout request failed:', error)
-  } finally {
-    // Always clear local auth
-    authStore.clearAuth()
-  }
-}
-
 export async function refreshToken(): Promise<RefreshResponse> {
   const authStore = useAuthStore()
   const { data } = await apiClient.post<RefreshResponse>('/api/refresh')
@@ -37,6 +24,6 @@ export async function refreshToken(): Promise<RefreshResponse> {
   return data
 }
 
-export async function editprofile(authInfo: Auth): Promise<void> {
+export async function editProfile(authInfo: Auth): Promise<void> {
   await apiClient.post('/api/editprofile', authInfo)
 }

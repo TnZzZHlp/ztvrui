@@ -7,7 +7,6 @@ const zh_cn = {
     login: '登录',
     loginFailed: '登录失败，请检查用户名和密码',
     loginSuccessful: '登录成功！欢迎',
-    logout: '退出登录',
     modifyInfo: '修改信息',
     password: '密码',
     pleaseEnterCredentials: '请输入用户名和密码',

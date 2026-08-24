@@ -29,26 +29,8 @@ export const useNetworkDetailStore = defineStore('networkDetail', () => {
   }
 
   function getNetworkOverviewData(networkId: string) {
-    console.log('getNetworkOverviewData', networksData.value, networkId)
-    if (networksData.value.findIndex((network) => network.id === networkId) !== -1) return
-    getNetworkById(networkId)
-      .then((data) => {
-        networksData.value.push(data)
-      })
-      .catch((error) => {
-        showSnackBar(i18n.global.t('failGet') + error, 'error')
-      })
-  }
-
-  function clearNetworksData() {
-    networksData.value = []
-  }
-
-  function removeNetwork(networkId: string) {
-    const index = networksData.value.findIndex((network) => network.id === networkId)
-    if (index !== -1) {
-      networksData.value.splice(index, 1)
-    }
+    if (networksData.value.some((network) => network.id === networkId)) return
+    refreshNetworkData(networkId)
   }
 
   // Initialize event listener
@@ -65,8 +47,6 @@ export const useNetworkDetailStore = defineStore('networkDetail', () => {
     // Actions
     refreshNetworkData,
     getNetworkOverviewData,
-    clearNetworksData,
-    removeNetwork,
     initEventListener,
   }
 })

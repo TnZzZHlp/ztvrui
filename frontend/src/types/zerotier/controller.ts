@@ -1,10 +1,3 @@
-export interface ControllerStatusInfo {
-  controller: boolean
-  apiVersion: number
-  clock: number
-  databaseReady: boolean
-}
-
 export interface ControllerNetworkInfo {
   name: string
   enableBroadcast?: boolean

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, toRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import _ from 'lodash'
 import type { ControllerNetworkMemberInfo } from '@/types/zerotier/controller'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { eventBus } from '@/utils/eventBus'
@@ -33,7 +32,7 @@ const memberInfoClone = ref<ControllerNetworkMemberInfo | null>(null)
 
 watch(() => props.memberInfo, (newValue) => {
     if (newValue) {
-        memberInfoClone.value = _.cloneDeep(newValue)
+        memberInfoClone.value = structuredClone(toRaw(newValue))
     }
 }, { immediate: true })
 

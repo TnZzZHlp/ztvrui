@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { refreshToken } from '@/api/manage/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -52,12 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function getAuthHeader(): Record<string, string> {
-    return token.value ? { Authorization: `Bearer ${token.value}` } : {}
-  }
-
   async function refresh() {
-    const { refreshToken } = await import('@/api/manage/auth')
     await refreshToken()
   }
 
@@ -75,7 +71,6 @@ export const useAuthStore = defineStore('auth', () => {
     setAuth,
     clearAuth,
     loadFromStorage,
-    getAuthHeader,
     refresh,
   }
 })

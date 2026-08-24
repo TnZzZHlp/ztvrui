@@ -29,7 +29,7 @@ impl ConfigService {
         self.config.load_full()
     }
 
-    pub async fn verify_user(&self, username: &str, password: &str) -> bool {
+    pub fn verify_user(&self, username: &str, password: &str) -> bool {
         let config = self.get_config();
         username == config.info.username && verify(password, &config.info.password).unwrap_or(false)
     }
@@ -58,13 +58,5 @@ impl ConfigService {
 
         self.config.store(Arc::new(config));
         Ok(())
-    }
-
-    pub fn get_listen_address(&self) -> String {
-        self.get_config().listen.clone()
-    }
-
-    pub fn get_zerotier_config(&self) -> crate::models::ZeroTierConfig {
-        self.get_config().zerotier.clone()
     }
 }

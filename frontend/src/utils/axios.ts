@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosInstance } from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
 // Create an Axios instance
@@ -11,8 +11,7 @@ const apiClient: AxiosInstance = axios.create({
 })
 
 // Request Interceptor
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+apiClient.interceptors.request.use((config) => {
     const authStore = useAuthStore()
 
     // Add authentication token
@@ -20,19 +19,11 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${authStore.token}`
     }
 
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
+  return config
+})
 
 // Response Interceptor
-apiClient.interceptors.response.use(
-  (response) => {
-    return response
-  },
-  async (error) => {
+apiClient.interceptors.response.use(undefined, async (error) => {
     const originalRequest = error.config
 
     // If 401 error and not retried yet
@@ -57,7 +48,6 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error)
-  },
-)
+})
 
 export default apiClient

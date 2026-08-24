@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { onMounted, ref, toRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import _ from 'lodash'
 import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 import { showSnackBar } from '@/utils/showSnackBar'
 import { eventBus } from '@/utils/eventBus'
@@ -41,7 +40,7 @@ watch(
         if (newValue) {
             const networkData = networkDetailStore.networksData.find((data) => data.id === newValue)
             if (networkData) {
-                networkDataClone.value = _.cloneDeep(networkData)
+                networkDataClone.value = structuredClone(toRaw(networkData))
                 // Load original rules from web storage
                 originalRules.value = localStorage.getItem('networkRules_' + newValue) || ''
             }

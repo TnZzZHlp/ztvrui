@@ -1,48 +1,36 @@
 <script setup lang="ts">
-import type { Component } from "vue"
-import type { SidebarMenuButtonProps } from "./SidebarMenuButtonChild.vue"
-import { reactiveOmit } from "@vueuse/core"
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import SidebarMenuButtonChild from "./SidebarMenuButtonChild.vue"
-import { useSidebar } from "./utils"
+import type { PrimitiveProps } from "reka-ui"
+import type { HTMLAttributes } from "vue"
+import type { SidebarMenuButtonVariants } from "."
+import { Primitive } from "reka-ui"
+import { cn } from "@/lib/utils"
+import { sidebarMenuButtonVariants } from "."
 
-defineOptions({
-  inheritAttrs: false,
-})
+export interface SidebarMenuButtonProps extends PrimitiveProps {
+  variant?: SidebarMenuButtonVariants["variant"]
+  size?: SidebarMenuButtonVariants["size"]
+  isActive?: boolean
+  class?: HTMLAttributes["class"]
+}
 
-const props = withDefaults(defineProps<SidebarMenuButtonProps & {
-  tooltip?: string | Component
-}>(), {
+const props = withDefaults(defineProps<SidebarMenuButtonProps>(), {
   as: "button",
   variant: "default",
   size: "default",
 })
-
-const { isMobile, state } = useSidebar()
-
-const delegatedProps = reactiveOmit(props, "tooltip")
 </script>
 
 <template>
-  <SidebarMenuButtonChild v-if="!tooltip" v-bind="{ ...delegatedProps, ...$attrs }">
+  <Primitive
+    data-slot="sidebar-menu-button"
+    data-sidebar="menu-button"
+    :data-size="size"
+    :data-active="isActive"
+    :class="cn(sidebarMenuButtonVariants({ variant, size }), props.class)"
+    :as="as"
+    :as-child="asChild"
+    v-bind="$attrs"
+  >
     <slot />
-  </SidebarMenuButtonChild>
-
-  <Tooltip v-else>
-    <TooltipTrigger as-child>
-      <SidebarMenuButtonChild v-bind="{ ...delegatedProps, ...$attrs }">
-        <slot />
-      </SidebarMenuButtonChild>
-    </TooltipTrigger>
-    <TooltipContent
-      side="right"
-      align="center"
-      :hidden="state !== 'collapsed' || isMobile"
-    >
-      <template v-if="typeof tooltip === 'string'">
-        {{ tooltip }}
-      </template>
-      <component :is="tooltip" v-else />
-    </TooltipContent>
-  </Tooltip>
+  </Primitive>
 </template>

@@ -1,17 +1,9 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/NetworkDetail'
-
-const networkDetailStore = useNetworkDetailStore()
-import { computed } from 'vue'
+import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
 import { useI18n } from 'vue-i18n'
 
-const route = useRoute()
 const { t } = useI18n()
-
-const networkData = computed(() => {
-    return networkDetailStore.networksData.find((data) => data.id === (route.params.networkId as string))
-})
+const { networkData } = useCurrentNetwork()
 </script>
 
 <template>

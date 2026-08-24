@@ -1,5 +1,4 @@
 use chrono::{DateTime, Duration, Utc};
-use ipnet::Ipv6Net;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
@@ -17,12 +16,6 @@ pub struct IpBanService {
     records: Arc<RwLock<HashMap<IpAddr, FailureRecord>>>,
 }
 
-impl Default for IpBanService {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl IpBanService {
     pub fn new() -> Self {
         Self {
@@ -36,17 +29,9 @@ impl IpBanService {
     fn get_ban_key(ip: &IpAddr) -> IpAddr {
         match ip {
             IpAddr::V4(ipv4) => IpAddr::V4(*ipv4),
-            IpAddr::V6(ipv6) => {
-                // Convert the IPv6 address into a /48 network, then obtain the network address.
-                match Ipv6Net::new(*ipv6, 48) {
-                    Ok(net) => IpAddr::V6(net.network()),
-                    Err(_) => {
-                        // quick fallback to the original IP if network creation fails
-                        tracing::warn!("Failed to create /48 network for IPv6 address: {}", ipv6);
-                        IpAddr::V6(*ipv6)
-                    }
-                }
-            }
+            IpAddr::V6(ipv6) => IpAddr::V6(std::net::Ipv6Addr::from(
+                u128::from(*ipv6) & (u128::MAX << 80),
+            )),
         }
     }
     /// Check if the IP is blocked

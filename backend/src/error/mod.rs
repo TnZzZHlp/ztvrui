@@ -28,9 +28,6 @@ pub enum AppError {
 
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
-
-    #[error("HTTP client error: {0}")]
-    ReqwestError(#[from] reqwest::Error),
 }
 
 impl IntoResponse for AppError {
@@ -43,7 +40,6 @@ impl IntoResponse for AppError {
             AppError::ConfigError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             AppError::IoError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             AppError::JsonError(e) => (StatusCode::BAD_REQUEST, e.to_string()),
-            AppError::ReqwestError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
 
         let body = Json(json!({

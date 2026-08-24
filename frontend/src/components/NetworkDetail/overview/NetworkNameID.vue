@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/NetworkDetail'
+import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
 
-const networkDetailStore = useNetworkDetailStore()
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
@@ -11,12 +9,8 @@ import { createOrUpdateNetwork } from '@/api/zerotier/controller'
 import { showSnackBar } from '@/utils/showSnackBar'
 import QRCode from 'qrcode'
 
-const route = useRoute()
 const { t } = useI18n()
-
-const networkData = computed(() => {
-    return networkDetailStore.networksData.find((data) => data.id === (route.params.networkId as string))
-})
+const { networkData } = useCurrentNetwork()
 
 const qrCodeDataUrl = ref<string>('')
 const showQRCode = ref(false)

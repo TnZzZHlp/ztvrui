@@ -1,24 +1,15 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { useNetworkDetailStore } from '@/stores/NetworkDetail'
-import { computed, ref } from 'vue'
+import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ModifyRulesDialog from './ModifyRulesDialog.vue'
 
-const networkDetailStore = useNetworkDetailStore()
 const { t } = useI18n()
-
-const route = useRoute()
-const networkData = computed(() => {
-    return networkDetailStore.networksData.find((data) => data.id === (route.params.networkId as string))
-})
+const { networkData } = useCurrentNetwork()
 
 // Dialog state
 const showDialog = ref(false)
-const selectedNetworkId = ref<string | null>(null)
-
 const openDialog = () => {
-    selectedNetworkId.value = networkData.value?.id || null
     showDialog.value = true
 }
 </script>
@@ -34,6 +25,6 @@ const openDialog = () => {
         </div>
 
         <!-- Dialog -->
-        <ModifyRulesDialog :open="showDialog" :network-id="selectedNetworkId" @update:open="showDialog = $event" />
+        <ModifyRulesDialog :open="showDialog" :network-id="networkData?.id ?? null" @update:open="showDialog = $event" />
     </div>
 </template>

@@ -1,7 +1,40 @@
-use std::net::IpAddr;
+use axum::http::HeaderMap;
+use std::net::{IpAddr, SocketAddr};
 
 /// Check if an IP address is a private/internal IP
 /// Returns true if the IP is not a public routable address
+pub fn extract_real_ip(headers: &HeaderMap, fallback_addr: SocketAddr) -> IpAddr {
+    let connect_ip = fallback_addr.ip();
+
+    if !is_private_ip(&connect_ip) {
+        tracing::debug!("Using public IP from ConnectInfo: {}", connect_ip);
+        return connect_ip;
+    }
+
+    if let Some(real_ip) = headers.get("X-Real-IP") {
+        if let Ok(ip_str) = real_ip.to_str() {
+            if let Ok(ip) = ip_str.parse::<IpAddr>() {
+                tracing::debug!("Got IP from X-Real-IP header: {}", ip);
+                return ip;
+            }
+        }
+    }
+
+    if let Some(forwarded_for) = headers.get("X-Forwarded-For") {
+        if let Ok(forwarded_str) = forwarded_for.to_str() {
+            if let Some(first_ip) = forwarded_str.split(',').next() {
+                if let Ok(ip) = first_ip.trim().parse::<IpAddr>() {
+                    tracing::debug!("Got IP from X-Forwarded-For header: {}", ip);
+                    return ip;
+                }
+            }
+        }
+    }
+
+    tracing::debug!("Using fallback private IP from ConnectInfo: {}", connect_ip);
+    connect_ip
+}
+
 pub fn is_private_ip(ip: &IpAddr) -> bool {
     match ip {
         IpAddr::V4(ipv4) => {

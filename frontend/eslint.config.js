@@ -5,11 +5,6 @@ import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
 export default [
   {
-    name: 'app/files-to-ignore',
-    ignores: ['src/components/networkDetail/overView/popupPanel/rulesCompile.ts'],
-  },
-
-  {
     name: 'app/files-to-lint',
     files: ['**/*.{ts,mts,tsx,vue}'],
   },
@@ -20,7 +15,6 @@ export default [
       '**/dist/**',
       '**/dist-ssr/**',
       '**/coverage/**',
-      'src/components/networkDetail/overView/popupPanel/rulesCompile.ts',
     ],
   },
 
