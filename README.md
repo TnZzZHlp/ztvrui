@@ -82,6 +82,8 @@ The `api_keys` field is optional. Add your own generated key when automation cli
 curl -H "X-API-Key: your_api_key_for_automation" http://127.0.0.1:7000/ztapi/status
 ```
 
+Deleting a network requires the current WebUI administrator password and the full network ID, including for API key clients. Send a JSON body with `password` and `confirmation_network_id` to `DELETE /ztapi/controller/network/{networkId}`; ID confirmation ignores surrounding whitespace and letter case. The deletion dialog supports copying and pasting the ID. Invalid confirmation returns 400, an incorrect password returns 403, and repeated password failures use the existing IP ban policy (429). Member deletion is unchanged.
+
 </br>
 
 #### Second

@@ -78,6 +78,8 @@ cat /var/lib/zerotier-one/authtoken.secret
 curl -H "X-API-Key: your_api_key_for_automation" http://127.0.0.1:7000/ztapi/status
 ```
 
+删除网络时必须验证当前 WebUI 管理员密码并确认完整网络 ID，API key 客户端也不例外。调用 `DELETE /ztapi/controller/network/{networkId}` 时，JSON 请求体必须包含 `password` 和 `confirmation_network_id`；ID 匹配忽略首尾空格和大小写。删除弹窗支持复制、粘贴 ID。确认信息不合法返回 400，密码错误返回 403，多次密码错误沿用现有 IP 封禁策略（429）。删除成员不受影响。
+
 </br>
 
 #### 第二步

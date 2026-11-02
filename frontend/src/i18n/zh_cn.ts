@@ -37,6 +37,10 @@ const zh_cn = {
     creationTime: '创建时间',
     default: '网络',
     delete: {
+      confirmId: '请输入完整网络 ID',
+      copyId: '复制网络 ID',
+      wrongPassword: '管理员密码错误',
+      tooManyAttempts: '密码错误次数过多，请稍后重试。',
       default: '删除网络',
       failed: '网络删除失败',
       notice: '确认删除网络？该操作无法恢复',

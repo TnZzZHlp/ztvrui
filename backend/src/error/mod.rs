@@ -11,6 +11,12 @@ pub enum AppError {
     #[error("Authentication failed")]
     Unauthorized,
 
+    #[error("Invalid request: {0}")]
+    BadRequest(String),
+
+    #[error("Password verification failed")]
+    PasswordVerificationFailed,
+
     #[error("Too many requests: {0}")]
     TooManyRequests(String),
 
@@ -34,6 +40,11 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
+            AppError::BadRequest(e) => (StatusCode::BAD_REQUEST, e),
+            AppError::PasswordVerificationFailed => (
+                StatusCode::FORBIDDEN,
+                "Password verification failed".to_string(),
+            ),
             AppError::TooManyRequests(e) => (StatusCode::TOO_MANY_REQUESTS, e.to_string()),
             AppError::InternalServerError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             AppError::ZeroTierError(e) => (StatusCode::BAD_GATEWAY, e.to_string()),

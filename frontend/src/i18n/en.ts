@@ -37,6 +37,10 @@ const en = {
     creationTime: 'Creation Time',
     default: 'Network',
     delete: {
+      confirmId: 'Enter the full network ID',
+      copyId: 'Copy network ID',
+      wrongPassword: 'Incorrect administrator password',
+      tooManyAttempts: 'Too many failed password attempts. Please try again later.',
       default: 'Delete Network',
       failed: 'Network deletion failed',
       notice: 'Confirm delete network? This operation cannot be recovered',

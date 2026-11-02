@@ -39,8 +39,14 @@ export async function createOrUpdateNetwork(
   return data
 }
 
-export async function deleteNetwork(networkId: string): Promise<void> {
-  await apiClient.delete(`/ztapi/controller/network/${networkId}`)
+export async function deleteNetwork(
+  networkId: string,
+  password: string,
+  confirmationNetworkId: string,
+): Promise<void> {
+  await apiClient.delete(`/ztapi/controller/network/${networkId}`, {
+    data: { password, confirmation_network_id: confirmationNetworkId },
+  })
 }
 
 export async function listNetworkMemberIds(networkId: string): Promise<Members> {

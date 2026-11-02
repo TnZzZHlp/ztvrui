@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod config;
 pub mod ip_ban;
+pub mod network_deletion;
 pub mod zerotier;
 
 pub use auth::AuthService;
