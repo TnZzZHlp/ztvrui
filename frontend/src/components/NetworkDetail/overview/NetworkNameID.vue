@@ -1,98 +1,130 @@
 <script setup lang="ts">
-import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
-
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { copyToClipboard } from '@/utils/copyToClipboard'
-import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
-import { createOrUpdateNetwork } from '@/api/zerotier/controller'
-import { showSnackBar } from '@/utils/showSnackBar'
 import QRCode from 'qrcode'
+import { Copy, QrCode } from 'lucide-vue-next'
+import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
+import { copyToClipboard } from '@/utils/copyToClipboard'
+import { createOrUpdateNetwork } from '@/api/zerotier/controller'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
-const { networkData } = useCurrentNetwork()
+const { networkData, networkDetailStore } = useCurrentNetwork()
 
-const qrCodeDataUrl = ref<string>('')
+const nameInput = ref('')
+const qrCodeDataUrl = ref('')
 const showQRCode = ref(false)
 
-// Generate QR code
-const generateQRCode = async () => {
-    if (!networkData.value?.id) return
-
-    try {
-        const zerotierUri = `https://joinzt.com/addnetwork?nwid=${networkData.value.id}&v=1`
-        const dataUrl = await QRCode.toDataURL(zerotierUri, {
-            width: 200,
-            margin: 2,
-            color: {
-                dark: '#000000',
-                light: '#FFFFFF'
-            }
-        })
-        qrCodeDataUrl.value = dataUrl
-        showQRCode.value = true
-    } catch (err) {
-        console.error('Failed to generate QR code:', err)
-        showSnackBar(t('common.updateFailed') + err, 'error')
-    }
-}
-
-// Monitor networkData changes and automatically generate a QR code.
 watch(
-    () => networkData.value?.id,
-    (newId) => {
-        if (newId) {
-            generateQRCode()
-        }
-    },
-    { immediate: true }
+  () => networkData.value?.name,
+  (newName) => {
+    nameInput.value = newName ?? ''
+  },
+  { immediate: true },
 )
 
-const changeNetworkName = (e: Event) => {
-    const newName = (e.target as HTMLInputElement).value
-    const data = networkData.value
-    if (!data) return
+watch(
+  () => networkData.value?.id,
+  () => {
+    showQRCode.value = false
+    qrCodeDataUrl.value = ''
+  },
+)
 
-    const payload: ControllerNetworkInfo = {
-        ...data,
-        name: newName,
+const toggleQRCode = async () => {
+  const networkId = networkData.value?.id
+  if (!networkId) return
+
+  if (showQRCode.value) {
+    showQRCode.value = false
+    return
+  }
+
+  if (!qrCodeDataUrl.value) {
+    try {
+      const zerotierUri = `https://joinzt.com/addnetwork?nwid=${networkId}&v=1`
+      qrCodeDataUrl.value = await QRCode.toDataURL(zerotierUri, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+      })
+    } catch (err) {
+      showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
+      return
     }
+  }
 
-    createOrUpdateNetwork(data.id as string, payload)
-        .then(() => {
-            showSnackBar(t('common.updateSuccess'), 'success')
-        })
-        .catch((err) => {
-            showSnackBar(t('common.updateFailed') + err, 'error')
-        })
+  showQRCode.value = true
+}
+
+const changeNetworkName = async () => {
+  const data = networkData.value
+  if (!data?.id) return
+
+  const trimmed = nameInput.value.trim()
+  if (!trimmed) {
+    showSnackBar(t('network.needName'), 'error')
+    nameInput.value = data.name ?? ''
+    return
+  }
+
+  if (trimmed === data.name) {
+    nameInput.value = trimmed
+    return
+  }
+
+  try {
+    const updated = await createOrUpdateNetwork(data.id, { name: trimmed })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    nameInput.value = data.name ?? ''
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
+  }
 }
 </script>
 
 <template>
-    <!-- Network Name and Id -->
-    <div v-if="networkData" class="p-4 shadow bg-white rounded-2lg">
-        <p class="text-gray-500">{{ t('network.name') }}</p>
-        <input class="text-3xl font-bold border-b-1 block w-full focus:outline-none" type="text"
-            placeholder="Network Name" name="Network Name" @change="changeNetworkName" :value="networkData?.name"
-            autocomplete="off" />
-        <p class="text-gray-500 mt-2">{{ t('network.id') }}</p>
-        <div class="flex items-center gap-4">
-            <button class="hover:bg-gray-100 active:bg-gray-200 px-2 py-1 rounded text-gray-700 transition-all"
-                @click="copyToClipboard(networkData?.id as string)">
-                {{ networkData?.id }}
-            </button>
-            <button
-                class="hover:bg-gray-100 active:bg-gray-200 px-3 py-1 rounded text-gray-700 transition-all border border-gray-300"
-                @click="showQRCode = !showQRCode">
-                {{ showQRCode ? t('network.hideQRCode') : t('network.showQRCode') }}
-            </button>
-        </div>
-        <!-- QR Code Display -->
-        <div v-if="showQRCode && qrCodeDataUrl" class="mt-4 flex justify-center">
-            <div class="p-4 bg-white border border-gray-300 rounded-lg shadow-sm">
-                <img :src="qrCodeDataUrl" :alt="'QR Code for ' + networkData?.id" class="w-50 h-50" />
-                <p class="text-center text-sm text-gray-500 mt-2">{{ t('network.scanToJoin') }}</p>
-            </div>
-        </div>
+  <div v-if="networkData" class="rounded-xl border bg-card p-5 text-card-foreground shadow-xs">
+    <p class="text-sm font-medium text-muted-foreground">{{ t('network.name') }}</p>
+    <input
+      v-model="nameInput"
+      class="mt-1 block w-full border-b border-border bg-transparent pb-1 text-2xl font-bold tracking-tight focus:border-primary focus:outline-none"
+      type="text"
+      :placeholder="t('network.name')"
+      name="Network Name"
+      autocomplete="off"
+      @change="changeNetworkName"
+    />
+
+    <p class="mt-4 text-sm font-medium text-muted-foreground">{{ t('network.id') }}</p>
+    <div class="mt-1.5 flex flex-wrap items-center gap-2">
+      <Button
+        v-if="networkData.id"
+        type="button"
+        variant="secondary"
+        size="sm"
+        class="font-mono text-xs"
+        @click="copyToClipboard(networkData.id)"
+      >
+        <span>{{ networkData.id }}</span>
+        <Copy class="h-3.5 w-3.5" />
+      </Button>
+      <Button type="button" variant="outline" size="sm" @click="toggleQRCode">
+        <QrCode class="h-3.5 w-3.5" />
+        <span>{{ showQRCode ? t('network.hideQRCode') : t('network.showQRCode') }}</span>
+      </Button>
     </div>
+
+    <div v-if="showQRCode && qrCodeDataUrl" class="mt-4 flex justify-center">
+      <div class="rounded-lg border bg-white p-4 shadow-xs">
+        <img :src="qrCodeDataUrl" :alt="'QR Code for ' + networkData.id" class="h-44 w-44" />
+        <p class="mt-2 text-center text-xs text-muted-foreground">{{ t('network.scanToJoin') }}</p>
+      </div>
+    </div>
+  </div>
 </template>

@@ -1,46 +1,35 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
 import { Switch } from '@/components/ui/switch'
-
-import { useI18n } from 'vue-i18n'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
-import { showSnackBar } from '@/utils/showSnackBar'
-import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
 
 const { t } = useI18n()
 const { networkData, networkDetailStore } = useCurrentNetwork()
 
-const changeNetworkType = (e: Event) => {
-  const checked = (e.target as HTMLInputElement).checked
+const changeNetworkType = async (checked: boolean) => {
   const data = networkData.value
-  if (!data) return
+  if (!data?.id) return
 
-  const payload: ControllerNetworkInfo = {
-    ...data,
-    private: checked,
+  try {
+    const updated = await createOrUpdateNetwork(data.id, { private: checked })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
   }
-
-  createOrUpdateNetwork(data.id as string, payload)
-    .then(() => {
-      showSnackBar(t('common.updateSuccess'), 'success')
-      networkDetailStore.refreshNetworkData(data.id as string)
-    })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
 }
 </script>
 
 <template>
-  <!-- Network Type -->
-  <div v-if="networkData" class="p-4 shadow bg-white rounded-2lg">
-    <p class="text-gray-500">{{ t('network.type.default') }}</p>
-    <div class="flex justify-between items-center">
-      <span class="text-3xl font-bold">
-        {{ networkData?.private ? t('network.type.private') : t('network.type.public') }}
+  <div v-if="networkData" class="rounded-xl border bg-card p-5 text-card-foreground shadow-xs">
+    <p class="text-sm font-medium text-muted-foreground">{{ t('network.type.default') }}</p>
+    <div class="mt-2 flex items-center justify-between gap-2">
+      <span class="text-2xl font-bold tracking-tight">
+        {{ networkData.private ? t('network.type.private') : t('network.type.public') }}
       </span>
-      <Switch :model-value="networkData?.private"
-        @update:model-value="(checked: boolean) => changeNetworkType({ target: { checked } } as any)" />
+      <Switch :model-value="Boolean(networkData.private)" @update:model-value="changeNetworkType" />
     </div>
   </div>
 </template>

@@ -78,13 +78,9 @@ pub async fn verify_network_deletion(
         return Err(AppError::BadRequest("Password is required".to_string()));
     }
 
-    let config = config.clone();
-    let verified = tokio::task::spawn_blocking(move || {
-        let username = config.get_config().info.username.clone();
-        config.verify_user(&username, &confirmation.password)
-    })
-    .await
-    .map_err(|_| AppError::InternalServerError("Password verification failed".to_string()))?;
+    let verified = config
+        .verify_current_password(&confirmation.password)
+        .await?;
 
     if !verified {
         ip_ban.record_failure(&client_ip).await;
@@ -93,4 +89,38 @@ pub async fn verify_network_deletion(
 
     ip_ban.record_success(&client_ip).await;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_network_and_member_deletion_paths() {
+        assert_eq!(
+            network_deletion_target("/controller/network/0123456789abcdef").unwrap(),
+            Some("0123456789abcdef")
+        );
+        assert_eq!(
+            network_deletion_target("/controller/network/0123456789abcdef/member/deadbeef01")
+                .unwrap(),
+            None
+        );
+        assert!(matches!(
+            network_deletion_target("/controller/network"),
+            Err(AppError::BadRequest(_))
+        ));
+        assert!(matches!(
+            network_deletion_target("/controller/network/0123456789abcdef/"),
+            Err(AppError::BadRequest(_))
+        ));
+        assert!(matches!(
+            network_deletion_target("/controller/network//0123456789abcdef"),
+            Err(AppError::BadRequest(_))
+        ));
+        assert!(matches!(
+            network_deletion_target("/controller/network/short"),
+            Err(AppError::BadRequest(_))
+        ));
+    }
 }

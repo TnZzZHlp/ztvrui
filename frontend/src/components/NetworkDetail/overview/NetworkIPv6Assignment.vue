@@ -1,56 +1,57 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
 import { Switch } from '@/components/ui/switch'
-
-import { useI18n } from 'vue-i18n'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
-import type { ControllerNetworkInfo, V6AssignMode } from '@/types/zerotier/controller'
-import { showSnackBar } from '@/utils/showSnackBar'
+import type { V6AssignMode } from '@/types/zerotier/controller'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
 
 const { t } = useI18n()
 const { networkData, networkDetailStore } = useCurrentNetwork()
 
-const changeIPv6Assignment = (e: Event, type: string) => {
-  const data = networkData
-  if (!data.value) return
+const ipv6Modes = ['6plane', 'rfc4193', 'zt'] as const
+type IPv6ModeKey = (typeof ipv6Modes)[number]
 
-  const checked = (e.target as HTMLInputElement).checked
+const changeIPv6Assignment = async (checked: boolean, mode: IPv6ModeKey) => {
+  const data = networkData.value
+  if (!data?.id) return
 
-  const V6AssignMode: V6AssignMode = data.value.v6AssignMode || {
+  const current: V6AssignMode = data.v6AssignMode ?? {
     '6plane': false,
     rfc4193: false,
     zt: false,
   }
 
-  const payload: ControllerNetworkInfo = {
-    ...data.value,
-    v6AssignMode: {
-      ...V6AssignMode,
-      [type]: checked,
-    },
+  try {
+    const updated = await createOrUpdateNetwork(data.id, {
+      v6AssignMode: {
+        '6plane': Boolean(current['6plane']),
+        rfc4193: Boolean(current.rfc4193),
+        zt: Boolean(current.zt),
+        [mode]: checked,
+      },
+    })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
   }
-
-  createOrUpdateNetwork(data.value.id as string, payload)
-    .then(() => {
-      showSnackBar(t('common.updateSuccess'), 'success')
-      networkDetailStore.refreshNetworkData(data.value?.id as string)
-    })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
 }
 </script>
 
 <template>
-  <!-- Network IPv6 Assignment -->
-  <div v-if="networkData" class="p-4 shadow bg-white rounded-2lg">
-    <p class="text-gray-500">{{ t('network.ipv6Assignment.default') }}</p>
-    <div class="flex items-center justify-between" v-for="(value, item) in networkData?.v6AssignMode" :key="item">
-      <span class="text-xl font-bold">
-        {{ t(`network.ipv6Assignment.${item}`) }}
-      </span>
-      <Switch :model-value="value"
-        @update:model-value="(checked: boolean) => changeIPv6Assignment({ target: { checked } } as any, item)" />
+  <div v-if="networkData" class="rounded-xl border bg-card p-5 text-card-foreground shadow-xs">
+    <p class="text-sm font-medium text-muted-foreground">{{ t('network.ipv6Assignment.default') }}</p>
+    <div class="mt-3 space-y-2.5">
+      <div v-for="mode in ipv6Modes" :key="mode" class="flex items-center justify-between gap-2">
+        <span class="text-base font-semibold">
+          {{ t(`network.ipv6Assignment.${mode}`) }}
+        </span>
+        <Switch
+          :model-value="Boolean(networkData.v6AssignMode?.[mode])"
+          @update:model-value="(checked: boolean) => changeIPv6Assignment(checked, mode)"
+        />
+      </div>
     </div>
   </div>
 </template>

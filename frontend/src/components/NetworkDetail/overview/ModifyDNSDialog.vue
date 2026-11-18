@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, toRaw, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Loader2, Trash2 } from 'lucide-vue-next'
 import { useNetworkDetailStore } from '@/stores/NetworkDetail'
-import { showSnackBar } from '@/utils/showSnackBar'
-import { eventBus } from '@/utils/eventBus'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
+import { isValidIP } from '@/utils/ipValidation'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
 import {
   Dialog,
@@ -15,8 +16,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import deleteIcon from '@/assets/icons/delete.svg'
-import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
 
 const { t } = useI18n()
 const networkDetailStore = useNetworkDetailStore()
@@ -31,92 +30,64 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const networkDataClone = ref<ControllerNetworkInfo | null>(null)
+const domain = ref('')
+const servers = ref<string[]>([])
+const submitting = ref(false)
 
 watch(
-  () => props.networkId,
-  (newValue) => {
-    if (newValue) {
-      const networkData = networkDetailStore.networksData.find((data) => data.id === newValue)
-      if (networkData) {
-        networkDataClone.value = structuredClone(toRaw(networkData))
+  [() => props.open, () => props.networkId],
+  ([isOpen, networkId]) => {
+    if (!isOpen || !networkId) return
+    const networkData = networkDetailStore.networksData.find((data) => data.id === networkId)
+    if (!networkData) return
 
-        // Initialize DNS if not exists
-        if (!networkDataClone.value.dns) {
-          networkDataClone.value.dns = {
-            domain: '',
-            servers: [],
-          }
-        }
-
-        // Fix if dns is array instead of object
-        if (Array.isArray(networkDataClone.value.dns)) {
-          networkDataClone.value.dns = {
-            domain: '',
-            servers: [],
-          }
-        }
-      }
-    }
+    const dns = networkData.dns && !Array.isArray(networkData.dns) ? networkData.dns : null
+    domain.value = dns?.domain ?? ''
+    servers.value = dns?.servers ? [...dns.servers] : []
   },
-  { immediate: true }
+  { immediate: true },
 )
 
-const handleSubmit = () => {
-  if (!networkDataClone.value) return
+const handleSubmit = async () => {
+  if (submitting.value || !props.networkId) return
 
-  // Validate IP range with regex
-  const dns = networkDataClone.value.dns
+  const trimmedDomain = domain.value.trim()
+  const cleanedServers = servers.value.map((s) => s.trim()).filter((s) => s.length > 0)
 
-  if (dns && dns.servers && dns.servers.length > 0) {
-    const ipRegex = /^(25[0-5]|2[0-4]\d|[01]?\d?\d)(\.(25[0-5]|2[0-4]\d|[01]?\d?\d)){3}$/
-
-    const isValid = dns.servers.every((server: string) => {
-      return !server || ipRegex.test(server)
-    })
-
-    if (!isValid) {
-      showSnackBar(t('network.ipAssignmentPools.invalidedIP'), 'error')
-      return
-    }
+  if (!cleanedServers.every((server) => isValidIP(server))) {
+    showSnackBar(t('network.ipAssignmentPools.invalidedIP'), 'error')
+    return
   }
 
-  // Submit changes
-  createOrUpdateNetwork(networkDataClone.value.id as string, {
-    ...networkDataClone.value,
-    dns: networkDataClone.value.dns,
-  })
-    .then(() => {
-      // Update the network data in the storage
-      const event = new CustomEvent('controllerNetworkInfoUpdate', {
-        detail: networkDataClone.value?.id,
-      })
-      eventBus.dispatchEvent(event)
-      showSnackBar(t('common.updateSuccess'), 'success')
-      emit('update:open', false)
+  submitting.value = true
+  try {
+    const updated = await createOrUpdateNetwork(props.networkId, {
+      dns: {
+        domain: trimmedDomain,
+        servers: cleanedServers,
+      },
     })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+    emit('update:open', false)
+  } catch (err) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleOpenChange = (newOpen: boolean) => {
+  if (submitting.value) return
   emit('update:open', newOpen)
 }
 
 const addServer = () => {
-  if (networkDataClone.value && networkDataClone.value.dns) {
-    if (!networkDataClone.value.dns.servers) {
-      networkDataClone.value.dns.servers = []
-    }
-    networkDataClone.value.dns.servers.push('')
-  }
+  servers.value.push('')
 }
 
 const removeServer = (index: number) => {
-  if (networkDataClone.value && networkDataClone.value.dns && networkDataClone.value.dns.servers) {
-    networkDataClone.value.dns.servers.splice(index, 1)
-  }
+  servers.value.splice(index, 1)
 }
 </script>
 
@@ -129,40 +100,54 @@ const removeServer = (index: number) => {
           {{ t('network.dns.domain') }} / {{ t('network.dns.servers') }}
         </DialogDescription>
       </DialogHeader>
-      <div class="py-4 space-y-4" v-if="networkDataClone && networkDataClone.dns">
-        <!-- Domain -->
+      <div class="space-y-4 py-4">
         <div class="space-y-2">
           <label class="text-sm font-medium">{{ t('network.dns.domain') }}</label>
-          <Input v-model="networkDataClone.dns.domain" :placeholder="t('network.dns.domain')" type="text" />
+          <Input
+            v-model="domain"
+            :placeholder="t('network.dns.domain')"
+            type="text"
+            :disabled="submitting"
+          />
         </div>
 
-        <!-- Servers -->
         <div class="space-y-2">
           <label class="text-sm font-medium">{{ t('network.dns.servers') }}</label>
-          <div class="space-y-3">
-            <div v-for="(server, index) in networkDataClone.dns.servers" :key="index" class="flex items-center gap-2">
-              <Input v-model="networkDataClone.dns.servers[index]" :placeholder="t('network.dns.servers')" type="text"
-                class="flex-1" />
-              <Button type="button" variant="destructive" size="icon" @click="removeServer(index)">
-                <img :src="deleteIcon" alt="delete" class="w-4 h-4 filter brightness-0 invert" />
+          <div class="max-h-[300px] space-y-2 overflow-y-auto pr-1">
+            <div v-for="(_, index) in servers" :key="index" class="flex items-center gap-2">
+              <Input
+                v-model="servers[index]"
+                :placeholder="t('network.dns.servers')"
+                type="text"
+                class="flex-1 font-mono"
+                :disabled="submitting"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                :disabled="submitting"
+                @click="removeServer(index)"
+              >
+                <Trash2 class="h-4 w-4" />
               </Button>
             </div>
-            <div v-if="!networkDataClone.dns.servers || networkDataClone.dns.servers.length === 0"
-              class="text-center text-gray-500 py-4">
+            <div v-if="servers.length === 0" class="py-4 text-center text-sm text-muted-foreground">
               {{ t('common.noData') }}
             </div>
           </div>
         </div>
       </div>
       <DialogFooter class="gap-2">
-        <Button type="button" variant="outline" @click="emit('update:open', false)">
+        <Button type="button" variant="outline" :disabled="submitting" @click="handleOpenChange(false)">
           {{ t('common.cancel') }}
         </Button>
-        <Button type="button" variant="secondary" @click="addServer">
+        <Button type="button" variant="secondary" :disabled="submitting" @click="addServer">
           {{ t('common.add') }}
         </Button>
-        <Button type="button" @click="handleSubmit">
-          {{ t('common.confirm') }}
+        <Button type="button" :disabled="submitting" @click="handleSubmit">
+          <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+          <span>{{ t('common.confirm') }}</span>
         </Button>
       </DialogFooter>
     </DialogContent>

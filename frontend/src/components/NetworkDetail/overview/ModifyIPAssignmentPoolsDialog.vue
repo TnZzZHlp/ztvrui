@@ -1,152 +1,152 @@
 <script setup lang="ts">
 import { ref, toRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Loader2, Trash2 } from 'lucide-vue-next'
 import { useNetworkDetailStore } from '@/stores/NetworkDetail'
-import { showSnackBar } from '@/utils/showSnackBar'
-import { eventBus } from '@/utils/eventBus'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
+import { isValidIPPoolRange } from '@/utils/ipValidation'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
+import type { IPAssignmentPool } from '@/types/zerotier/controller'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import deleteIcon from '@/assets/icons/delete.svg'
-import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
 import { Input } from '@/components/ui/input'
 
 const { t } = useI18n()
 const networkDetailStore = useNetworkDetailStore()
 
 interface Props {
-    open: boolean
-    networkId: string | null
+  open: boolean
+  networkId: string | null
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-    'update:open': [value: boolean]
+  'update:open': [value: boolean]
 }>()
 
-const networkDataClone = ref<ControllerNetworkInfo | null>(null)
+const pools = ref<IPAssignmentPool[]>([])
+const submitting = ref(false)
 
 watch(
-    () => props.networkId,
-    (newValue) => {
-        if (newValue) {
-            const networkData = networkDetailStore.networksData.find((data) => data.id === newValue)
-            if (networkData) {
-                networkDataClone.value = structuredClone(toRaw(networkData))
-            }
-        }
-    },
-    { immediate: true }
+  [() => props.open, () => props.networkId],
+  ([isOpen, networkId]) => {
+    if (!isOpen || !networkId) return
+    const networkData = networkDetailStore.networksData.find((data) => data.id === networkId)
+    if (!networkData) return
+    pools.value = networkData.ipAssignmentPools
+      ? structuredClone(toRaw(networkData.ipAssignmentPools))
+      : []
+  },
+  { immediate: true },
 )
 
-const handleSubmit = () => {
-    if (!networkDataClone.value) return
+const handleSubmit = async () => {
+  if (submitting.value || !props.networkId) return
 
-    // Validate IP range with regex
-    const ipAssignmentPools = networkDataClone.value.ipAssignmentPools || []
+  const cleanedPools = pools.value
+    .map((pool) => ({
+      ipRangeStart: pool.ipRangeStart.trim(),
+      ipRangeEnd: pool.ipRangeEnd.trim(),
+    }))
+    .filter((pool) => pool.ipRangeStart.length > 0 || pool.ipRangeEnd.length > 0)
 
-    const ipRegex = /^(25[0-5]|2[0-4]\d|[01]?\d?\d)(\.(25[0-5]|2[0-4]\d|[01]?\d?\d)){3}$/
+  if (!cleanedPools.every((pool) => isValidIPPoolRange(pool.ipRangeStart, pool.ipRangeEnd))) {
+    showSnackBar(t('network.ipAssignmentPools.invalidRange'), 'error')
+    return
+  }
 
-    const isValid = ipAssignmentPools.every((pool) => {
-        return ipRegex.test(pool.ipRangeStart) && ipRegex.test(pool.ipRangeEnd)
+  submitting.value = true
+  try {
+    const updated = await createOrUpdateNetwork(props.networkId, {
+      ipAssignmentPools: cleanedPools,
     })
-
-    if (!isValid) {
-        showSnackBar(t('invalidedIP'), 'error')
-        return
-    }
-
-    // Submit changes
-    createOrUpdateNetwork(networkDataClone.value.id as string, {
-        ...networkDataClone.value,
-        ipAssignmentPools: networkDataClone.value.ipAssignmentPools,
-    })
-        .then(() => {
-            // Update the network data in the storage
-            const event = new CustomEvent('controllerNetworkInfoUpdate', {
-                detail: networkDataClone.value?.id,
-            })
-            eventBus.dispatchEvent(event)
-            showSnackBar(t('common.updateSuccess'), 'success')
-            emit('update:open', false)
-        })
-        .catch((err) => {
-            showSnackBar(t('common.updateFailed') + err, 'error')
-        })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+    emit('update:open', false)
+  } catch (err) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleOpenChange = (newOpen: boolean) => {
-    emit('update:open', newOpen)
+  if (submitting.value) return
+  emit('update:open', newOpen)
 }
 
 const addIPPool = () => {
-    if (networkDataClone.value) {
-        if (!networkDataClone.value.ipAssignmentPools) {
-            networkDataClone.value.ipAssignmentPools = []
-        }
-        networkDataClone.value.ipAssignmentPools.push({
-            ipRangeStart: '',
-            ipRangeEnd: '',
-        })
-    }
+  pools.value.push({
+    ipRangeStart: '',
+    ipRangeEnd: '',
+  })
 }
 
 const removeIPPool = (index: number) => {
-    if (networkDataClone.value && networkDataClone.value.ipAssignmentPools) {
-        networkDataClone.value.ipAssignmentPools.splice(index, 1)
-    }
+  pools.value.splice(index, 1)
 }
 </script>
 
 <template>
-    <Dialog :open="open" @update:open="handleOpenChange">
-        <DialogContent class="sm:max-w-[600px]">
-            <DialogHeader>
-                <DialogTitle>{{ t('network.ipAssignmentPools.default') }}</DialogTitle>
-                <DialogDescription>
-                    {{ t('network.ipAssignmentPools.ipRangeStart') }} / {{ t('network.ipAssignmentPools.ipRangeEnd') }}
-                </DialogDescription>
-            </DialogHeader>
-            <div class="py-4" v-if="networkDataClone">
-                <div class="space-y-3">
-                    <div v-for="(pool, index) in networkDataClone.ipAssignmentPools" :key="index"
-                        class="flex items-center gap-2">
-                        <Input type="text" v-model="pool.ipRangeStart"
-                            :placeholder="t('network.ipAssignmentPools.ipRangeStart')"
-                            class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            autocomplete="off" />
-                        <Input type="text" v-model="pool.ipRangeEnd"
-                            :placeholder="t('network.ipAssignmentPools.ipRangeEnd')"
-                            class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            autocomplete="off" />
-                        <Button type="button" variant="destructive" size="icon" @click="removeIPPool(index)">
-                            <img :src="deleteIcon" alt="delete" class="w-4 h-4 filter brightness-0 invert" />
-                        </Button>
-                    </div>
-                    <div v-if="!networkDataClone.ipAssignmentPools || networkDataClone.ipAssignmentPools.length === 0"
-                        class="text-center text-gray-500 py-4">
-                        {{ t('common.noData') }}
-                    </div>
-                </div>
-            </div>
-            <DialogFooter class="gap-2">
-                <Button type="button" variant="outline" @click="emit('update:open', false)">
-                    {{ t('common.cancel') }}
-                </Button>
-                <Button type="button" variant="secondary" @click="addIPPool">
-                    {{ t('common.add') }}
-                </Button>
-                <Button type="button" @click="handleSubmit">
-                    {{ t('common.confirm') }}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+  <Dialog :open="open" @update:open="handleOpenChange">
+    <DialogContent class="sm:max-w-[600px]">
+      <DialogHeader>
+        <DialogTitle>{{ t('network.ipAssignmentPools.default') }}</DialogTitle>
+        <DialogDescription>
+          {{ t('network.ipAssignmentPools.ipRangeStart') }} / {{ t('network.ipAssignmentPools.ipRangeEnd') }}
+        </DialogDescription>
+      </DialogHeader>
+      <div class="max-h-[360px] space-y-3 overflow-y-auto py-4 pr-1">
+        <div v-for="(pool, index) in pools" :key="index" class="flex items-center gap-2">
+          <Input
+            v-model="pool.ipRangeStart"
+            type="text"
+            :placeholder="t('network.ipAssignmentPools.ipRangeStart')"
+            class="flex-1 font-mono"
+            :disabled="submitting"
+            autocomplete="off"
+          />
+          <Input
+            v-model="pool.ipRangeEnd"
+            type="text"
+            :placeholder="t('network.ipAssignmentPools.ipRangeEnd')"
+            class="flex-1 font-mono"
+            :disabled="submitting"
+            autocomplete="off"
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            :disabled="submitting"
+            @click="removeIPPool(index)"
+          >
+            <Trash2 class="h-4 w-4" />
+          </Button>
+        </div>
+        <div v-if="pools.length === 0" class="py-4 text-center text-sm text-muted-foreground">
+          {{ t('common.noData') }}
+        </div>
+      </div>
+      <DialogFooter class="gap-2">
+        <Button type="button" variant="outline" :disabled="submitting" @click="handleOpenChange(false)">
+          {{ t('common.cancel') }}
+        </Button>
+        <Button type="button" variant="secondary" :disabled="submitting" @click="addIPPool">
+          {{ t('common.add') }}
+        </Button>
+        <Button type="button" :disabled="submitting" @click="handleSubmit">
+          <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+          <span>{{ t('common.confirm') }}</span>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

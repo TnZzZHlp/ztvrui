@@ -1,132 +1,135 @@
 <script setup lang="ts">
-import { ref, toRaw, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Loader2, Trash2 } from 'lucide-vue-next'
 import type { ControllerNetworkMemberInfo } from '@/types/zerotier/controller'
-import { showSnackBar } from '@/utils/showSnackBar'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
+import { isValidIP } from '@/utils/ipValidation'
 import { eventBus } from '@/utils/eventBus'
 import { createOrUpdateNetworkMember } from '@/api/zerotier/controller'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import deleteIcon from '@/assets/icons/delete.svg'
+import { Input } from '@/components/ui/input'
 
 const { t } = useI18n()
 
 interface Props {
-    open: boolean
-    memberInfo: ControllerNetworkMemberInfo | null
+  open: boolean
+  memberInfo: ControllerNetworkMemberInfo | null
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-    'update:open': [value: boolean]
+  'update:open': [value: boolean]
 }>()
 
-const memberInfoClone = ref<ControllerNetworkMemberInfo | null>(null)
+const ipList = ref<string[]>([])
+const submitting = ref(false)
 
-watch(() => props.memberInfo, (newValue) => {
-    if (newValue) {
-        memberInfoClone.value = structuredClone(toRaw(newValue))
+watch(
+  [() => props.open, () => props.memberInfo],
+  ([isOpen, newValue]) => {
+    if (isOpen && newValue) {
+      ipList.value = [...(newValue.ipAssignments ?? [])]
     }
-}, { immediate: true })
+  },
+  { immediate: true },
+)
 
-const handleSubmit = () => {
-    if (!memberInfoClone.value) return
+const handleSubmit = async () => {
+  if (submitting.value || !props.memberInfo) return
 
-    const ipv4Regex =
-        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+  const cleanedIps = ipList.value.map((ip) => ip.trim()).filter((ip) => ip.length > 0)
+  if (!cleanedIps.every((ip) => isValidIP(ip))) {
+    showSnackBar(t('network.ipAssignmentPools.invalidedIP'), 'error')
+    return
+  }
 
-    const ipv6Regex =
-        /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,7}:$|^([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}$|^([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}$|^([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}$|^([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}$|^[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){6}|:)$|^:((:[0-9a-fA-F]{1,4}){7}|:)$|^:((:[0-9a-fA-F]{1,4}){6}|:)$/
+  const uniqueIps = [...new Set(cleanedIps)]
 
-    const ipAssignments = memberInfoClone.value.ipAssignments
-
-    // Validate IP addresses
-    for (const ip of ipAssignments) {
-        if (ip && !ipv4Regex.test(ip) && !ipv6Regex.test(ip)) {
-            showSnackBar(t('network.ipAssignmentPools.invalidedIP'), 'error')
-            return
-        }
-    }
-
-    const controllerNetworkMemberSettings = {
-        ...memberInfoClone.value,
-        ipAssignments: ipAssignments,
-    }
-
-    // Update member info
-    createOrUpdateNetworkMember(
-        memberInfoClone.value.nwid,
-        memberInfoClone.value.id,
-        controllerNetworkMemberSettings,
-    )
-        .then(() => {
-            eventBus.dispatchEvent(new Event('networkMemberChanged'))
-            showSnackBar(t('common.updateSuccess'), 'success')
-            emit('update:open', false)
-        })
-        .catch((error) => {
-            showSnackBar(error.message, 'error')
-        })
+  submitting.value = true
+  try {
+    await createOrUpdateNetworkMember(props.memberInfo.nwid, props.memberInfo.id, {
+      ipAssignments: uniqueIps,
+    })
+    eventBus.dispatchEvent(new Event('networkMemberChanged'))
+    showSnackBar(t('common.updateSuccess'), 'success')
+    emit('update:open', false)
+  } catch (error) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(error)}`, 'error')
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleOpenChange = (newOpen: boolean) => {
-    emit('update:open', newOpen)
+  if (submitting.value) return
+  emit('update:open', newOpen)
 }
 
 const addIP = () => {
-    if (memberInfoClone.value) {
-        memberInfoClone.value.ipAssignments.push('')
-    }
+  ipList.value.push('')
 }
 
 const removeIP = (index: number) => {
-    if (memberInfoClone.value) {
-        memberInfoClone.value.ipAssignments.splice(index, 1)
-    }
+  ipList.value.splice(index, 1)
 }
 </script>
 
 <template>
-    <Dialog :open="open" @update:open="handleOpenChange">
-        <DialogContent class="sm:max-w-[500px]">
-            <DialogHeader>
-                <DialogTitle>{{ t('network.member.modifyIP') }}</DialogTitle>
-                <DialogDescription>
-                    {{ t('network.ip') }}
-                </DialogDescription>
-            </DialogHeader>
-            <div class="py-4" v-if="memberInfoClone">
-                <h4 class="font-semibold mb-3">{{ t('network.ip') }}</h4>
-                <ul class="space-y-2">
-                    <li v-for="(_, index) in memberInfoClone.ipAssignments" :key="index"
-                        class="flex items-center gap-2">
-                        <input type="text" v-model="memberInfoClone.ipAssignments[index]"
-                            class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="t('network.ip')" />
-                        <Button type="button" variant="destructive" size="icon" @click="removeIP(index)">
-                            <img :src="deleteIcon" alt="delete" class="w-4 h-4 filter brightness-0 invert" />
-                        </Button>
-                    </li>
-                </ul>
-            </div>
-            <DialogFooter class="gap-2">
-                <Button type="button" variant="outline" @click="emit('update:open', false)">
-                    {{ t('common.cancel') }}
-                </Button>
-                <Button type="button" variant="secondary" @click="addIP">
-                    {{ t('common.add') }}
-                </Button>
-                <Button type="button" @click="handleSubmit">
-                    {{ t('common.confirm') }}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+  <Dialog :open="open" @update:open="handleOpenChange">
+    <DialogContent class="sm:max-w-[500px]">
+      <DialogHeader>
+        <DialogTitle>{{ t('network.member.modifyIP') }}</DialogTitle>
+        <DialogDescription>
+          {{ memberInfo?.name || memberInfo?.id }}
+        </DialogDescription>
+      </DialogHeader>
+      <div class="py-4" v-if="memberInfo">
+        <h4 class="mb-3 text-sm font-semibold">{{ t('network.ip') }}</h4>
+        <ul class="max-h-[300px] space-y-2 overflow-y-auto pr-1">
+          <li v-for="(_, index) in ipList" :key="index" class="flex items-center gap-2">
+            <Input
+              v-model="ipList[index]"
+              type="text"
+              class="flex-1 font-mono"
+              :placeholder="t('network.ip')"
+              :disabled="submitting"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              :disabled="submitting"
+              @click="removeIP(index)"
+            >
+              <Trash2 class="h-4 w-4" />
+            </Button>
+          </li>
+        </ul>
+        <div v-if="ipList.length === 0" class="py-4 text-center text-sm text-muted-foreground">
+          {{ t('common.noData') }}
+        </div>
+      </div>
+      <DialogFooter class="gap-2">
+        <Button type="button" variant="outline" :disabled="submitting" @click="handleOpenChange(false)">
+          {{ t('common.cancel') }}
+        </Button>
+        <Button type="button" variant="secondary" :disabled="submitting" @click="addIP">
+          {{ t('common.add') }}
+        </Button>
+        <Button type="button" :disabled="submitting" @click="handleSubmit">
+          <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+          <span>{{ t('common.confirm') }}</span>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

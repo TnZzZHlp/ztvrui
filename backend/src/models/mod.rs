@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::net::IpAddr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginRequest {
@@ -8,6 +9,7 @@ pub struct LoginRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateProfileRequest {
+    pub current_password: String,
     pub username: String,
     pub password: String,
 }
@@ -30,5 +32,9 @@ pub struct AppConfig {
     pub listen: String,
     #[serde(default)]
     pub api_keys: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trusted_proxies: Option<Vec<IpAddr>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jwt_secret: Option<String>,
     pub zerotier: ZeroTierConfig,
 }

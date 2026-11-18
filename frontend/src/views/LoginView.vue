@@ -1,88 +1,151 @@
 <script setup lang="ts">
-import { login } from '@/api/manage/auth'
-import { showSnackBar } from '@/utils/showSnackBar'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { isAxiosError } from 'axios'
+import { Eye, EyeOff, Languages, Loader2 } from 'lucide-vue-next'
+import { login } from '@/api/manage/auth'
+import { setLocale } from '@/i18n'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
-const Login = async (e: Event) => {
-  // Prevent the default form submission
-  e.preventDefault()
+const username = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const loading = ref(false)
+const showForgotDialog = ref(false)
 
-  // Get the form data
-  const formData = new FormData(e.target as HTMLFormElement)
+const toggleLocale = () => {
+  setLocale(locale.value === 'zh-CN' ? 'en' : 'zh-CN')
+}
 
-  // Extract username and password
-  const username = formData.get('username') as string
-  const password = formData.get('password') as string
-
-  if (!username || !password) {
+const handleLogin = async () => {
+  const trimmedUsername = username.value.trim()
+  if (!trimmedUsername || !password.value) {
     showSnackBar(t('auth.pleaseEnterCredentials'), 'error')
     return
   }
 
+  loading.value = true
   try {
-    const response = await login({ username, password })
+    const response = await login({ username: trimmedUsername, password: password.value })
     showSnackBar(`${t('auth.loginSuccessful')} ${response.username}`, 'success')
-    router.push({ name: 'networks' })
+    await router.push({ name: 'networks' })
   } catch (error) {
-    console.error('Login failed:', error)
-    showSnackBar(t('auth.loginFailed'), 'error')
+    if (isAxiosError(error) && error.response?.status === 429) {
+      showSnackBar(getErrorMessage(error) || t('network.delete.tooManyAttempts'), 'error')
+    } else if (isAxiosError(error) && error.response?.status === 401) {
+      showSnackBar(t('auth.loginFailed'), 'error')
+    } else {
+      showSnackBar(`${t('auth.loginFailed')}: ${getErrorMessage(error)}`, 'error')
+    }
+  } finally {
+    loading.value = false
   }
 }
 </script>
 
 <template>
-  <div class="relative flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-
-    <!-- Logo -->
-    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-      <img class="mx-auto h-30 w-auto" src="/icon.png" alt="ZTVRUI Icon" />
+  <div class="relative flex min-h-full flex-col justify-center bg-muted/30 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="absolute top-4 right-4">
+      <Button type="button" variant="outline" size="sm" @click="toggleLocale">
+        <Languages class="h-4 w-4" />
+        <span>{{ locale === 'zh-CN' ? 'EN' : '中文' }}</span>
+      </Button>
     </div>
 
-    <!-- Form container -->
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-      <form class="space-y-6" @submit="Login">
-        <div>
-          <label for="email" class="block text-sm/6 font-medium text-foreground">{{
-            t('auth.username')
-          }}</label>
-          <div class="mt-2">
-            <input type="username" name="username" id="username" autocomplete="username"
-              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-input placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
-          </div>
+    <div class="mx-auto w-full max-w-sm rounded-xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
+      <div class="flex flex-col items-center text-center">
+        <img class="h-20 w-auto" src="/icon.png" alt="ZTVRUI Icon" />
+        <h1 class="mt-4 text-2xl font-bold tracking-tight">ZTVRUI</h1>
+        <p class="mt-1 text-sm text-muted-foreground">{{ t('auth.loginSubtitle') }}</p>
+      </div>
+
+      <form class="mt-8 space-y-5" @submit.prevent="handleLogin">
+        <div class="space-y-2">
+          <label for="username" class="block text-sm font-medium text-foreground">
+            {{ t('auth.username') }}
+          </label>
+          <Input
+            id="username"
+            v-model="username"
+            type="text"
+            name="username"
+            autocomplete="username"
+            :disabled="loading"
+            required
+          />
         </div>
 
-        <div>
+        <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <label for="password" class="block text-sm/6 font-medium text-foreground">{{
-              t('auth.password')
-            }}</label>
-            <div class="text-sm">
-              <a href="#" class="font-semibold text-primary hover:text-primary/80">{{
-                t('auth.forgotPassword')
-              }}</a>
-            </div>
+            <label for="password" class="block text-sm font-medium text-foreground">
+              {{ t('auth.password') }}
+            </label>
+            <button
+              type="button"
+              class="text-xs font-medium text-primary hover:underline"
+              @click="showForgotDialog = true"
+            >
+              {{ t('auth.forgotPassword') }}
+            </button>
           </div>
-          <div class="mt-2">
-            <input type="password" name="password" id="password" autocomplete="current-password"
-              class="block w-full rounded-md bg-background px-3 py-1.5 text-base text-foreground outline-1 -outline-offset-1 outline-input placeholder:text-muted-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6" />
+          <div class="relative">
+            <Input
+              id="password"
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              name="password"
+              autocomplete="current-password"
+              class="pr-10"
+              :disabled="loading"
+              required
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+              :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              @click="showPassword = !showPassword"
+            >
+              <EyeOff v-if="showPassword" class="h-4 w-4" />
+              <Eye v-else class="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        <div>
-          <button type="submit"
-            class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm/6 font-semibold text-primary-foreground shadow-xs hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-            {{ t('auth.login') }}
-          </button>
-        </div>
+        <Button type="submit" class="w-full" :disabled="loading">
+          <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
+          <span>{{ t('auth.login') }}</span>
+        </Button>
       </form>
     </div>
+
+    <Dialog :open="showForgotDialog" @update:open="showForgotDialog = $event">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('auth.forgotPassword') }}</DialogTitle>
+          <DialogDescription class="pt-2 text-sm leading-relaxed">
+            {{ t('auth.forgotPasswordHint') }}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" @click="showForgotDialog = false">
+            {{ t('common.close') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
-
-<style>
-@import 'tailwindcss';
-</style>

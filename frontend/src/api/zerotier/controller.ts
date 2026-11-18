@@ -30,7 +30,7 @@ export async function getNetworkById(networkId: string): Promise<ControllerNetwo
 
 export async function createOrUpdateNetwork(
   networkId: string,
-  controllerinfo: ControllerNetworkInfo,
+  controllerinfo: Partial<ControllerNetworkInfo>,
 ): Promise<ControllerNetworkInfo> {
   const { data } = await apiClient.post<ControllerNetworkInfo>(
     `/ztapi/controller/network/${networkId}`,
@@ -67,7 +67,7 @@ export async function getNetworkMemberById(
 export async function createOrUpdateNetworkMember(
   networkId: string,
   memberId: string,
-  memberSettings: ControllerNetworkMemberSettings,
+  memberSettings: Partial<ControllerNetworkMemberSettings>,
 ): Promise<ControllerNetworkMemberInfo> {
   const { data } = await apiClient.post<ControllerNetworkMemberInfo>(
     `/ztapi/controller/network/${networkId}/member/${memberId}`,

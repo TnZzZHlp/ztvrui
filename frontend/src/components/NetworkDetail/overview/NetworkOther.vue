@@ -1,124 +1,133 @@
 <script setup lang="ts">
-import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
-import { Switch } from '@/components/ui/switch'
-import { NumberField, NumberFieldContent, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement } from '@/components/ui/number-field'
-
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
+import { Switch } from '@/components/ui/switch'
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from '@/components/ui/number-field'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
-import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
-import { showSnackBar } from '@/utils/showSnackBar'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
 
 const { t } = useI18n()
 const { networkData, networkDetailStore } = useCurrentNetwork()
 
-const mtu = ref<number>(1280)
-const multicastLimit = ref<number>(0)
+const mtu = ref<number>(2800)
+const multicastLimit = ref<number>(32)
 
-// 监听 networkData 变化，同步到本地状态
-watch(networkData, (newData) => {
-  if (newData) {
-    mtu.value = newData.mtu || 1280
-    multicastLimit.value = newData.multicastLimit || 0
-  }
-}, { immediate: true })
+watch(
+  networkData,
+  (newData) => {
+    if (newData) {
+      mtu.value = newData.mtu ?? 2800
+      multicastLimit.value = newData.multicastLimit ?? 0
+    }
+  },
+  { immediate: true },
+)
 
-const changeEnableBroadcast = (e: Event) => {
+const changeEnableBroadcast = async (checked: boolean) => {
   const data = networkData.value
-  if (!data) return
+  if (!data?.id) return
 
-  const checked = (e.target as HTMLInputElement).checked
-
-  const payload: ControllerNetworkInfo = {
-    ...data,
-    enableBroadcast: checked,
+  try {
+    const updated = await createOrUpdateNetwork(data.id, { enableBroadcast: checked })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
   }
-
-  createOrUpdateNetwork(data.id as string, payload)
-    .then(() => {
-      showSnackBar(t('common.updateSuccess'), 'success')
-      networkDetailStore.refreshNetworkData(data.id as string)
-    })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
 }
 
-const changeMTU = (value: number) => {
+const changeMTU = async (value: number | undefined) => {
   const data = networkData.value
-  if (!data) return
-
-  mtu.value = value
+  if (!data?.id || typeof value !== 'number' || Number.isNaN(value)) return
+  if (value === data.mtu) return
 
   if (value < 1280) {
     showSnackBar(t('network.mtuTooLow'), 'error')
+    mtu.value = data.mtu ?? 2800
     return
   }
 
-  const payload: ControllerNetworkInfo = {
-    ...data,
-    mtu: value,
+  mtu.value = value
+  try {
+    const updated = await createOrUpdateNetwork(data.id, { mtu: value })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    mtu.value = data.mtu ?? 2800
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
   }
-
-  createOrUpdateNetwork(data.id as string, payload)
-    .then(() => {
-      showSnackBar(t('common.updateSuccess'), 'success')
-    })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
 }
 
-const changeMulticastLimit = (value: number) => {
+const changeMulticastLimit = async (value: number | undefined) => {
   const data = networkData.value
-  if (!data) return
-
-  multicastLimit.value = value
+  if (!data?.id || typeof value !== 'number' || Number.isNaN(value)) return
+  if (value === data.multicastLimit) return
 
   if (value < 0) {
     showSnackBar(t('network.multicastLimitInvalid'), 'error')
+    multicastLimit.value = data.multicastLimit ?? 0
     return
   }
 
-  const payload: ControllerNetworkInfo = {
-    ...data,
-    multicastLimit: value,
+  multicastLimit.value = value
+  try {
+    const updated = await createOrUpdateNetwork(data.id, { multicastLimit: value })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    multicastLimit.value = data.multicastLimit ?? 0
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
   }
-
-  createOrUpdateNetwork(data.id as string, payload)
-    .then(() => {
-      showSnackBar(t('common.updateSuccess'), 'success')
-    })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
 }
 </script>
 
 <template>
-  <!-- Network MTU MulticastLimit enableBroadcast -->
-  <div v-if="networkData" class="p-4 shadow bg-white rounded-2lg">
-    <p class="text-gray-500">MTU</p>
-    <NumberField v-model="mtu" :min="1280" :format-options="{ useGrouping: false }" @update:model-value="changeMTU">
-      <NumberFieldContent>
-        <NumberFieldDecrement />
-        <NumberFieldInput class="font-bold" />
-        <NumberFieldIncrement />
-      </NumberFieldContent>
-    </NumberField>
+  <div v-if="networkData" class="space-y-3 rounded-xl border bg-card p-5 text-card-foreground shadow-xs">
+    <div>
+      <p class="mb-1 text-sm font-medium text-muted-foreground">MTU</p>
+      <NumberField
+        v-model="mtu"
+        :min="1280"
+        :format-options="{ useGrouping: false }"
+        @update:model-value="changeMTU"
+      >
+        <NumberFieldContent>
+          <NumberFieldDecrement />
+          <NumberFieldInput class="font-bold" />
+          <NumberFieldIncrement />
+        </NumberFieldContent>
+      </NumberField>
+    </div>
 
-    <p class="text-gray-500 mt-2">{{ t('network.multicastLimit') }}</p>
-    <NumberField v-model="multicastLimit" :min="0" :format-options="{ useGrouping: false }"
-      @update:model-value="changeMulticastLimit">
-      <NumberFieldContent>
-        <NumberFieldDecrement />
-        <NumberFieldInput class="text-ms font-bold" />
-        <NumberFieldIncrement />
-      </NumberFieldContent>
-    </NumberField>
+    <div>
+      <p class="mb-1 text-sm font-medium text-muted-foreground">{{ t('network.multicastLimit') }}</p>
+      <NumberField
+        v-model="multicastLimit"
+        :min="0"
+        :format-options="{ useGrouping: false }"
+        @update:model-value="changeMulticastLimit"
+      >
+        <NumberFieldContent>
+          <NumberFieldDecrement />
+          <NumberFieldInput class="text-sm font-bold" />
+          <NumberFieldIncrement />
+        </NumberFieldContent>
+      </NumberField>
+    </div>
 
-    <p class="text-gray-500 mt-2">{{ t('network.enableBroadcast') }}</p>
-    <Switch :model-value="networkData?.enableBroadcast"
-      @update:model-value="(checked: boolean) => changeEnableBroadcast({ target: { checked } } as any)" />
+    <div class="flex items-center justify-between pt-1">
+      <p class="text-sm font-medium text-muted-foreground">{{ t('network.enableBroadcast') }}</p>
+      <Switch
+        :model-value="Boolean(networkData.enableBroadcast)"
+        @update:model-value="changeEnableBroadcast"
+      />
+    </div>
   </div>
 </template>

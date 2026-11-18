@@ -1,21 +1,21 @@
+use crate::error::{AppError, Result};
 use crate::services::auth::Claims;
 use crate::state::AppState;
-use crate::utils::extract_real_ip;
 use axum::{
     extract::{ConnectInfo, Request, State},
-    http::{HeaderMap, StatusCode},
+    http::HeaderMap,
     middleware::Next,
     response::Response,
 };
 use std::net::SocketAddr;
 
-// Helper function to extract token from Authorization header
-fn extract_token(headers: &HeaderMap) -> Option<String> {
-    if let Some(auth_header) = headers.get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                return Some(token.to_string());
-            }
+fn extract_bearer_token(headers: &HeaderMap) -> Option<String> {
+    let auth_header = headers.get("Authorization")?.to_str().ok()?.trim();
+    let (scheme, token) = auth_header.split_once(' ')?;
+    if scheme.eq_ignore_ascii_case("bearer") {
+        let trimmed = token.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed.to_string());
         }
     }
     None
@@ -24,14 +24,22 @@ fn extract_token(headers: &HeaderMap) -> Option<String> {
 fn extract_api_key(headers: &HeaderMap) -> Option<String> {
     if let Some(api_key_header) = headers.get("X-API-Key") {
         if let Ok(api_key) = api_key_header.to_str() {
-            return Some(api_key.to_string());
+            let trimmed = api_key.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
         }
     }
 
     if let Some(auth_header) = headers.get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(api_key) = auth_str.strip_prefix("ApiKey ") {
-                return Some(api_key.to_string());
+            if let Some((scheme, api_key)) = auth_str.trim().split_once(' ') {
+                if scheme.eq_ignore_ascii_case("apikey") {
+                    let trimmed = api_key.trim();
+                    if !trimmed.is_empty() {
+                        return Some(trimmed.to_string());
+                    }
+                }
             }
         }
     }
@@ -39,57 +47,47 @@ fn extract_api_key(headers: &HeaderMap) -> Option<String> {
     None
 }
 
-// Authentication middleware
 pub async fn auth_middleware(
     State(app_state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response> {
     let headers = request.headers();
+    let client_ip = app_state.extract_client_ip(headers, addr);
 
-    // Extract client IP address
-    let client_ip = extract_real_ip(headers, addr);
-
-    // Check if the IP is banned
     if app_state.ip_ban.is_banned(&client_ip).await {
         tracing::warn!("Blocked request from banned IP: {}", client_ip);
-        return Err(StatusCode::TOO_MANY_REQUESTS);
+        return Err(AppError::TooManyRequests(
+            "Too many failed attempts. Please try again later.".to_string(),
+        ));
     }
 
-    let token = extract_token(headers).ok_or(StatusCode::UNAUTHORIZED)?;
+    let token = extract_bearer_token(headers).ok_or(AppError::Unauthorized)?;
+    let claims: Claims = app_state.auth.validate_token(&token)?;
 
-    // Validate JWT token
-    let claims: Claims = app_state
-        .auth
-        .validate_token(&token)
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
-
-    // Add claims to request extensions for use in handlers
     request.extensions_mut().insert(claims);
-
     Ok(next.run(request).await)
 }
 
-// Authentication middleware for ZeroTier API proxy requests.
-// It accepts browser JWTs and configured API keys for automation clients.
+/// Authentication middleware for ZeroTier API proxy requests.
+/// Accepts browser JWTs and configured API keys for automation clients.
 pub async fn auth_or_api_key_middleware(
     State(app_state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response> {
     let headers = request.headers();
-
-    // Extract client IP address
-    let client_ip = extract_real_ip(headers, addr);
-    let token = extract_token(headers);
+    let client_ip = app_state.extract_client_ip(headers, addr);
+    let token = extract_bearer_token(headers);
     let api_key = extract_api_key(headers);
 
-    // Check if the IP is banned
     if app_state.ip_ban.is_banned(&client_ip).await {
         tracing::warn!("Blocked request from banned IP: {}", client_ip);
-        return Err(StatusCode::TOO_MANY_REQUESTS);
+        return Err(AppError::TooManyRequests(
+            "Too many failed attempts. Please try again later.".to_string(),
+        ));
     }
 
     if let Some(token) = token {
@@ -105,5 +103,5 @@ pub async fn auth_or_api_key_middleware(
         }
     }
 
-    Err(StatusCode::UNAUTHORIZED)
+    Err(AppError::Unauthorized)
 }

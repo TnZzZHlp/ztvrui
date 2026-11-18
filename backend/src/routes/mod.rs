@@ -1,34 +1,66 @@
+use crate::error::AppError;
 use crate::handlers::{self, *};
 use crate::state::AppState;
 use axum::{
-    middleware::from_fn_with_state,
+    extract::{DefaultBodyLimit, Request},
+    http::{header, HeaderValue},
+    middleware::{from_fn, from_fn_with_state, Next},
+    response::Response,
     routing::{any, post},
     Router,
 };
 
+const MAX_BODY_BYTES: usize = 2 * 1024 * 1024; // 2 MiB
+
+async fn security_headers_middleware(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
+    headers.insert(
+        header::REFERRER_POLICY,
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    headers.insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static(
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
+        ),
+    );
+    response
+}
+
 pub fn app_routes(app_state: AppState) -> Router {
+    let protected_api_routes = Router::new()
+        .route("/editprofile", post(update_profile))
+        .route("/refresh", post(refresh_token))
+        .layer(from_fn_with_state(
+            app_state.clone(),
+            crate::middleware::auth_middleware,
+        ));
+
+    let api_routes = Router::new()
+        .route("/login", post(login))
+        .merge(protected_api_routes)
+        .fallback(|| async { AppError::NotFound });
+
+    let zerotier_routes = Router::new()
+        .route("/{*wildcard}", any(forward_to_zerotier))
+        .fallback(|| async { AppError::NotFound })
+        .layer(from_fn_with_state(
+            app_state.clone(),
+            crate::middleware::auth_or_api_key_middleware,
+        ));
+
     Router::new()
-        .nest("/api", Router::new().route("/login", post(login)))
-        .nest(
-            "/api",
-            Router::new()
-                .route("/editprofile", post(update_profile))
-                .route("/refresh", post(refresh_token))
-                .layer(from_fn_with_state(
-                    app_state.clone(),
-                    crate::middleware::auth_middleware,
-                )),
-        )
-        .nest(
-            "/ztapi",
-            Router::new()
-                .route("/{*wildcard}", any(forward_to_zerotier))
-                .layer(from_fn_with_state(
-                    app_state.clone(),
-                    crate::middleware::auth_or_api_key_middleware,
-                )),
-        )
+        .nest("/api", api_routes)
+        .nest("/ztapi", zerotier_routes)
         .fallback(handlers::serve_static_files)
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
+        .layer(from_fn(security_headers_middleware))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .make_span_with(

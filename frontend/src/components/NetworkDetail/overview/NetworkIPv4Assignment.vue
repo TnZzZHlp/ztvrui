@@ -1,52 +1,40 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useCurrentNetwork } from '@/composables/useCurrentNetwork'
 import { Switch } from '@/components/ui/switch'
-
-import { useI18n } from 'vue-i18n'
 import { createOrUpdateNetwork } from '@/api/zerotier/controller'
-import type { ControllerNetworkInfo } from '@/types/zerotier/controller'
-import { showSnackBar } from '@/utils/showSnackBar'
+import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
 
 const { t } = useI18n()
 const { networkData, networkDetailStore } = useCurrentNetwork()
 
-const changeIPv4Assignment = (e: Event) => {
-  console.log('changeIPv4Assignment triggered', e)
+const changeIPv4Assignment = async (checked: boolean) => {
   const data = networkData.value
-  if (!data) return
+  if (!data?.id) return
 
-  const checked = (e.target as HTMLInputElement).checked
-
-  console.debug('IPv4 zt assignment changed to:', checked)
-
-  const payload: ControllerNetworkInfo = {
-    ...data,
-    v4AssignMode: {
-      zt: checked,
-    },
+  try {
+    const updated = await createOrUpdateNetwork(data.id, {
+      v4AssignMode: { zt: checked },
+    })
+    networkDetailStore.setNetworkData(updated)
+    showSnackBar(t('common.updateSuccess'), 'success')
+  } catch (err) {
+    showSnackBar(`${t('common.updateFailed')}: ${getErrorMessage(err)}`, 'error')
   }
-
-  createOrUpdateNetwork(data.id as string, payload)
-    .then(() => {
-      showSnackBar(t('common.updateSuccess'), 'success')
-      networkDetailStore.refreshNetworkData(data.id as string)
-    })
-    .catch((err) => {
-      showSnackBar(t('common.updateFailed') + err, 'error')
-    })
 }
 </script>
 
 <template>
-  <!-- Network IPv4 Assignment -->
-  <div v-if="networkData" class="p-4 shadow bg-white rounded-2lg">
-    <p class="text-gray-500">{{ t('network.ipv4Assignment.default') }}</p>
-    <div class="flex items-center justify-between">
-      <span class="text-xl font-bold">
+  <div v-if="networkData" class="rounded-xl border bg-card p-5 text-card-foreground shadow-xs">
+    <p class="text-sm font-medium text-muted-foreground">{{ t('network.ipv4Assignment.default') }}</p>
+    <div class="mt-3 flex items-center justify-between gap-2">
+      <span class="text-base font-semibold">
         {{ t('network.ipv4Assignment.zt') }}
       </span>
-      <Switch :model-value="networkData?.v4AssignMode?.zt" @update:model-value="(checked: boolean) =>
-        changeIPv4Assignment({ target: { checked } } as any)" />
+      <Switch
+        :model-value="Boolean(networkData.v4AssignMode?.zt)"
+        @update:model-value="changeIPv4Assignment"
+      />
     </div>
   </div>
 </template>

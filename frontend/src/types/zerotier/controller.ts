@@ -14,14 +14,21 @@ export interface ControllerNetworkInfo {
   creationTime?: number
   objtype?: string
   revision?: number
-  capabilities?: Array<number[]>
+  capabilities?: Capability[]
   rules?: Rule[]
   tags?: Tag[]
 }
 
+export interface Capability {
+  id: number
+  default?: boolean
+  rules?: Rule[]
+  [key: string]: unknown
+}
+
 export interface Tag {
-  id: string
-  default?: string | null
+  id: number | string
+  default?: number | string | null
 }
 
 export interface DNS {
@@ -36,13 +43,14 @@ export interface IPAssignmentPool {
 
 export interface Route {
   target: string
-  via: string
+  via: string | null
 }
 
 export interface Rule {
-  not: boolean
-  or: boolean
+  not?: boolean
+  or?: boolean
   type: string
+  [key: string]: unknown
 }
 
 export interface V4AssignMode {

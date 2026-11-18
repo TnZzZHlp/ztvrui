@@ -14,6 +14,9 @@ pub enum AppError {
     #[error("Invalid request: {0}")]
     BadRequest(String),
 
+    #[error("Not found")]
+    NotFound,
+
     #[error("Password verification failed")]
     PasswordVerificationFailed,
 
@@ -41,6 +44,7 @@ impl IntoResponse for AppError {
         let (status, error_message) = match self {
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
             AppError::BadRequest(e) => (StatusCode::BAD_REQUEST, e),
+            AppError::NotFound => (StatusCode::NOT_FOUND, "Not found".to_string()),
             AppError::PasswordVerificationFailed => (
                 StatusCode::FORBIDDEN,
                 "Password verification failed".to_string(),

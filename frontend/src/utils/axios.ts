@@ -1,7 +1,15 @@
-import axios, { type AxiosInstance } from 'axios'
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
+import i18n from '@/i18n'
+import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
+import { showSnackBar } from '@/utils/showSnackBar'
 
-// Create an Axios instance
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean
+}
+
+let refreshPromise: Promise<void> | null = null
+
 const apiClient: AxiosInstance = axios.create({
   baseURL: '/',
   timeout: 30000,
@@ -10,44 +18,57 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
-// Request Interceptor
 apiClient.interceptors.request.use((config) => {
-    const authStore = useAuthStore()
+  const authStore = useAuthStore()
 
-    // Add authentication token
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
+  if (authStore.token) {
+    config.headers.Authorization = `Bearer ${authStore.token}`
+  }
 
   return config
 })
 
-// Response Interceptor
 apiClient.interceptors.response.use(undefined, async (error) => {
-    const originalRequest = error.config
+  const originalRequest = error.config as RetryableRequestConfig | undefined
+  const url = originalRequest?.url ?? ''
+  const isAuthEndpoint = url.includes('/api/login') || url.includes('/api/refresh')
 
-    // If 401 error and not retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
+  if (
+    error.response?.status === 401 &&
+    originalRequest &&
+    !originalRequest._retry &&
+    !isAuthEndpoint
+  ) {
+    originalRequest._retry = true
+    const authStore = useAuthStore()
 
-      const authStore = useAuthStore()
-
-      // Try refreshing the token
-      if (authStore.token) {
-        try {
-          await authStore.refresh()
-          // Retry the original request with a new token.
-          originalRequest.headers.Authorization = `Bearer ${authStore.token}`
-          return apiClient(originalRequest)
-        } catch (refreshError) {
-          // Refresh failed, clear token and redirect to login page.
-          authStore.clearAuth()
-          return Promise.reject(refreshError)
+    if (authStore.token) {
+      try {
+        if (!refreshPromise) {
+          refreshPromise = authStore.refresh().finally(() => {
+            refreshPromise = null
+          })
         }
+        await refreshPromise
+        originalRequest.headers.Authorization = `Bearer ${authStore.token}`
+        return apiClient(originalRequest)
+      } catch (refreshError) {
+        authStore.clearAuth()
+        showSnackBar(i18n.global.t('auth.tokenExpired'), 'error')
+        if (router.currentRoute.value.name !== 'login') {
+          await router.push({ name: 'login' })
+        }
+        return Promise.reject(refreshError)
       }
     }
 
-    return Promise.reject(error)
+    authStore.clearAuth()
+    if (router.currentRoute.value.name !== 'login') {
+      await router.push({ name: 'login' })
+    }
+  }
+
+  return Promise.reject(error)
 })
 
 export default apiClient

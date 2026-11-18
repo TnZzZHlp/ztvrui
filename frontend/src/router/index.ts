@@ -17,9 +17,15 @@ const router = createRouter({
     },
     {
       path: '/network/:networkId',
-      name: 'networkDetail',
       component: () => import('@/views/NetworkDetailView.vue'),
       children: [
+        {
+          path: '',
+          redirect: (to) => ({
+            name: 'networkOverview',
+            params: { networkId: to.params.networkId },
+          }),
+        },
         {
           path: 'overview',
           name: 'networkOverview',
@@ -32,21 +38,27 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/networks',
+    },
   ],
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to) => {
   const authStore = useAuthStore()
 
-  // If going to login page and already authenticated, redirect to networks
   if (to.name === 'login' && authStore.isAuthenticated) {
-    next({ name: 'networks' })
-  } else if (to.name !== 'login' && !authStore.isAuthenticated) {
-    next({ name: 'login' })
-  } else {
-    next()
+    return { name: 'networks' }
   }
-  console.debug('Navigation to:', to.fullPath)
+
+  if (to.name !== 'login' && !authStore.isAuthenticated) {
+    return { name: 'login' }
+  }
+
+  if (authStore.isAuthenticated && authStore.shouldRefreshToken) {
+    authStore.refresh().catch(() => {})
+  }
 })
 
 export default router

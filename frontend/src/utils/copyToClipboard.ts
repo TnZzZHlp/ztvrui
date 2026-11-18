@@ -2,24 +2,37 @@ import i18n from '@/i18n'
 import { showSnackBar } from './showSnackBar'
 
 export function copyToClipboard(text: string) {
-  // Determine whether the Clipboard API is supported
-  if (navigator.clipboard) {
+  if (navigator.clipboard?.writeText) {
     return navigator.clipboard
       .writeText(text)
       .then(() => {
         showSnackBar(i18n.global.t('common.copied'), 'success')
       })
       .catch(() => {
-        showSnackBar(i18n.global.t('common.copyFailed'), 'error')
+        fallbackCopy(text)
       })
-  } else {
-    // Fallback handling
-    const textArea = document.createElement('textarea')
-    textArea.value = text
-    document.body.appendChild(textArea)
-    textArea.select()
-    document.execCommand('copy')
+  }
+  fallbackCopy(text)
+}
+
+function fallbackCopy(text: string) {
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.setAttribute('readonly', '')
+  textArea.style.position = 'fixed'
+  textArea.style.opacity = '0'
+  textArea.style.pointerEvents = 'none'
+  document.body.appendChild(textArea)
+  textArea.select()
+  try {
+    const ok = document.execCommand('copy')
+    showSnackBar(
+      i18n.global.t(ok ? 'common.copied' : 'common.copyFailed'),
+      ok ? 'success' : 'error',
+    )
+  } catch {
+    showSnackBar(i18n.global.t('common.copyFailed'), 'error')
+  } finally {
     document.body.removeChild(textArea)
-    showSnackBar(i18n.global.t('common.copied'), 'success')
   }
 }
