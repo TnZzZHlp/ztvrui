@@ -7,6 +7,7 @@ import { Eye, EyeOff, Languages, Loader2 } from 'lucide-vue-next'
 import { login } from '@/api/manage/auth'
 import { setLocale } from '@/i18n'
 import { getErrorMessage, showSnackBar } from '@/utils/showSnackBar'
+import logoIcon from '@/assets/icon.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -68,7 +69,7 @@ const handleLogin = async () => {
 
     <div class="mx-auto w-full max-w-sm rounded-xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
       <div class="flex flex-col items-center text-center">
-        <img class="h-20 w-auto" src="/icon.png" alt="ZTVRUI Icon" />
+        <img class="h-20 w-auto" :src="logoIcon" alt="ZTVRUI Icon" />
         <h1 class="mt-4 text-2xl font-bold tracking-tight">ZTVRUI</h1>
         <p class="mt-1 text-sm text-muted-foreground">{{ t('auth.loginSubtitle') }}</p>
       </div>

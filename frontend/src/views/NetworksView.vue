@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { setLocale } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import { showSnackBar } from '@/utils/showSnackBar'
+import logoIcon from '@/assets/icon.png'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -34,7 +35,7 @@ const handleLogout = async () => {
     <header class="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
       <div class="mx-auto flex h-[60px] max-w-5xl items-center justify-between gap-2 px-4">
         <div class="flex items-center gap-2.5">
-          <img src="/icon.png" alt="ZTVRUI" class="h-7 w-7 rounded" />
+          <img :src="logoIcon" alt="ZTVRUI" class="h-7 w-7 rounded" />
           <span class="text-lg font-bold tracking-tight sm:text-xl">{{ t('network.default') }}</span>
         </div>
 

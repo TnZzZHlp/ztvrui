@@ -33,6 +33,14 @@ async fn security_headers_middleware(request: Request, next: Next) -> Response {
     response
 }
 
+async fn no_store_cache_middleware(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+}
+
 pub fn app_routes(app_state: AppState) -> Router {
     let protected_api_routes = Router::new()
         .route("/editprofile", post(update_profile))
@@ -45,7 +53,8 @@ pub fn app_routes(app_state: AppState) -> Router {
     let api_routes = Router::new()
         .route("/login", post(login))
         .merge(protected_api_routes)
-        .fallback(|| async { AppError::NotFound });
+        .fallback(|| async { AppError::NotFound })
+        .layer(from_fn(no_store_cache_middleware));
 
     let zerotier_routes = Router::new()
         .route("/{*wildcard}", any(forward_to_zerotier))
@@ -53,7 +62,8 @@ pub fn app_routes(app_state: AppState) -> Router {
         .layer(from_fn_with_state(
             app_state.clone(),
             crate::middleware::auth_or_api_key_middleware,
-        ));
+        ))
+        .layer(from_fn(no_store_cache_middleware));
 
     Router::new()
         .nest("/api", api_routes)

@@ -24,6 +24,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useNetworkDetailStore } from '@/stores/NetworkDetail'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import { showSnackBar } from '@/utils/showSnackBar'
+import logoIcon from '@/assets/icon.png'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -91,7 +92,7 @@ watch(
         <Sidebar collapsible="icon">
           <div data-slot="sidebar-header" data-sidebar="header" class="flex flex-col gap-2 p-2">
             <div class="flex items-center gap-2 p-2">
-              <img src="/icon.png" alt="ZTVRUI" class="h-6 w-6 shrink-0 rounded" />
+              <img :src="logoIcon" alt="ZTVRUI" class="h-6 w-6 shrink-0 rounded" />
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">ZTVRUI</span>
               </div>
